@@ -1,0 +1,23 @@
+[tasks.build-wasm]
+command = "cargo"
+args = ["build", "--release", "--target", "wasm32-unknown-unknown"]
+
+[tasks.wait]
+script = "timeout /t 3 /nobreak"
+
+[tasks.copy-wasm]
+script = [
+    "echo Copying WASM file...",
+    "if not exist build mkdir build",
+    "echo Copying from target\\wasm32-unknown-unknown\\release\\macroquad-wasm-game.wasm",
+    "copy /Y target\\wasm32-unknown-unknown\\release\\macroquad-wasm-game.wasm build\\macroquad-wasm-game.wasm"
+]
+
+[tasks.serve]
+script = [
+    "cd build",
+    "python -m http.server 8000"
+]
+
+[tasks.start]
+dependencies = ["build-wasm", "wait", "copy-wasm", "wait", "serve"]
