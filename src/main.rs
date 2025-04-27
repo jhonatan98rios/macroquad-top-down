@@ -19,7 +19,7 @@ async fn main() {
     let boids_movement = Box::new(BoidsMovement {
         visual_range: 12.0,
         separation_dist: 25.0,
-        max_speed: 1.2,
+        max_speed: 2.0,
         player_weight: 0.8,
         player_distance: 2000.0, 
         noise_strength: 0.05,
@@ -28,7 +28,7 @@ async fn main() {
         cohesion_weight: 0.3,
     });
     
-    let mut enemies = EnemySystem::new(3600, boids_movement);
+    let mut enemies = EnemySystem::new(5000, boids_movement);
     enemies.spawn_all();
 
     loop {
