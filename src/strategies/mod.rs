@@ -15,11 +15,3 @@ pub trait MovementStrategy: Send + Sync {
         all_positions: &[Vec2]
     );
 }
-
-#[derive(Clone)]
-pub struct EnemyData {
-    pub x: f32,
-    pub y: f32,
-    pub vel_x: f32,
-    pub vel_y: f32,
-}

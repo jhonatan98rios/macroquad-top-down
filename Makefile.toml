@@ -21,3 +21,8 @@ script = [
 
 [tasks.start]
 dependencies = ["build-wasm", "wait", "copy-wasm", "wait", "serve"]
+
+
+[tasks.build-windows]
+command = "cargo"
+args = ["build", "--release", "--target", "x86_64-pc-windows-msvc"]

@@ -13,22 +13,6 @@ pub struct BoidsMovement {
     pub cohesion_weight: f32,
 }
 
-impl Default for BoidsMovement {
-    fn default() -> Self {
-        Self {
-            visual_range: 50.0,
-            separation_dist: 20.0,
-            max_speed: 2.0,
-            player_weight: 0.7,
-            player_distance: 150.0,
-            noise_strength: 0.4,
-            separation_weight: 1.5,
-            alignment_weight: 1.0,
-            cohesion_weight: 1.0,
-        }
-    }
-}
-
 impl MovementStrategy for BoidsMovement {
     fn move_enemy(
         &self,
