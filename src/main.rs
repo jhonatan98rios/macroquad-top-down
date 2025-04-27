@@ -54,7 +54,7 @@ async fn main() {
 
         // Update and draw enemies
         enemies.update(player.position());
-        enemies.draw();
+        enemies.draw(player.position());
 
         // Display debug info
         set_default_camera();

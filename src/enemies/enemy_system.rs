@@ -103,13 +103,13 @@ impl EnemySystem {
         }
     }
     
-    pub fn draw(&self) {
+    pub fn draw(&self, target_pos: Vec2) {
         match &self.texture {
             Some(texture) => {
                 for i in 0..self.positions.len() {
                     if self.data[i].status == EnemyStatus::Live {
                         
-                        let flip_x = self.data[i].last_movement.x < 0.0;
+                        let flip_x = self.positions[i].x > target_pos.x;
                         
                         let params = DrawTextureParams {
                             dest_size: Some(self.sizes[i]),
