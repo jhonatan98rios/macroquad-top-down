@@ -11,7 +11,8 @@ pub enum EnemyStatus {
 
 #[derive(Clone, Copy)]
 pub struct EnemyData {
-    pub status: EnemyStatus
+    pub status: EnemyStatus,
+    pub last_movement: Vec2, // Track movement direction for flipping
 }
 
 pub struct EnemySystem {
@@ -22,10 +23,20 @@ pub struct EnemySystem {
     time: f32,
     chunk_index: usize,
     max_number_of_chunks: usize,
+    texture: Option<Texture2D>, // Single texture for all enemies
 }
 
 impl EnemySystem {
-    pub fn new(count: usize, strategy: Box<dyn MovementStrategy>) -> Self {
+    pub async  fn new(count: usize, strategy: Box<dyn MovementStrategy>) -> Self {
+        
+        let texture = match load_texture("assets/enemy.png").await {
+            Ok(t) => Some(t),
+            Err(_) => {
+                println!("Failed to load enemy texture, falling back to rectangles");
+                None
+            }
+        };
+
         let positions = (0..count)
             .map(|_| vec2(
                 rand::gen_range(0.0, screen_width()),
@@ -33,8 +44,11 @@ impl EnemySystem {
             ))
             .collect();
             
-        let sizes = vec![vec2(10.0, 10.0); count];
-        let data = vec![EnemyData { status: EnemyStatus::Pending }; count];
+        let sizes = vec![vec2(16.0, 16.0); count];
+        let data = vec![EnemyData { 
+            status: EnemyStatus::Pending,
+            last_movement: Vec2::new(1.0, 0.0) 
+        }; count];
 
         EnemySystem {
             positions,
@@ -44,6 +58,7 @@ impl EnemySystem {
             time: 0.0,
             chunk_index: 0,
             max_number_of_chunks: 4, // Number of chunks to divide the enemies into for processing (bigger is faster)
+            texture,
         }
     }
     
@@ -67,6 +82,9 @@ impl EnemySystem {
         
         for i in start..end {
             if self.data[i].status == EnemyStatus::Live {
+
+                let prev_pos = self.positions[i];
+
                 strategy.move_enemy(
                     &mut self.positions[i],
                     target_pos,
@@ -74,20 +92,53 @@ impl EnemySystem {
                     i,
                     &all_positions,
                 );
+
+                // Update movement direction if position changed
+                let movement = self.positions[i] - prev_pos;
+                if movement.length_squared() > 0.0 {
+                    self.data[i].last_movement = movement.normalize();
+                }
             }
         }
     }
     
     pub fn draw(&self) {
-        for i in 0..self.positions.len() {
-            if self.data[i].status == EnemyStatus::Live {
-                draw_rectangle(
-                    self.positions[i].x,
-                    self.positions[i].y,
-                    self.sizes[i].x,
-                    self.sizes[i].y,
-                    RED
-                );
+        match &self.texture {
+            Some(texture) => {
+                for i in 0..self.positions.len() {
+                    if self.data[i].status == EnemyStatus::Live {
+                        
+                        let flip_x = self.data[i].last_movement.x < 0.0;
+                        
+                        let params = DrawTextureParams {
+                            dest_size: Some(self.sizes[i]),
+                            flip_x,
+                            rotation: 0.0,
+                            ..Default::default()
+                        };
+                        draw_texture_ex(
+                            texture,
+                            self.positions[i].x,
+                            self.positions[i].y,
+                            WHITE,
+                            params
+                        );
+                    }
+                }
+            }
+            None => {
+                // Fallback to rectangles if no texture
+                for i in 0..self.positions.len() {
+                    if self.data[i].status == EnemyStatus::Live {
+                        draw_rectangle(
+                            self.positions[i].x,
+                            self.positions[i].y,
+                            self.sizes[i].x,
+                            self.sizes[i].y,
+                            RED
+                        );
+                    }
+                }
             }
         }
     }

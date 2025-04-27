@@ -69,3 +69,18 @@ To build in release mode:
 cargo build --release
 ``` 
 The executable will be in target/`platform`/release/.
+
+### To build Android using Docker on Windows
+
+```bash
+docker pull notfl3/cargo-apk
+$path = (Get-Location).Path -replace '\\', '/' -replace '^([A-Z]):', '/$1'
+docker run --rm -v "${path}:/root/src" -w /root/src cargo-apk cargo quad-apk build --release
+```
+
+### To build Android using Docker on Unix
+
+```bash
+docker pull notfl3/cargo-apk
+docker run --rm -v $(pwd):/root/src -w /root/src notfl3/cargo-apk cargo quad-apk build --release
+```

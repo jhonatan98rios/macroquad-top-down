@@ -13,11 +13,11 @@ use macroquad::prelude::*;
 async fn main() {
 
     // Create player
-    let mut player = Player::new(100.0, 100.0);
+    let mut player = Player::new(100.0, 100.0).await;
 
     #[allow(unused_variables)]
     let boids_movement = Box::new(BoidsMovement {
-        visual_range: 12.0,
+        visual_range: 18.0,
         separation_dist: 25.0,
         max_speed: 2.0,
         player_weight: 0.8,
@@ -28,7 +28,7 @@ async fn main() {
         cohesion_weight: 0.3,
     });
     
-    let mut enemies = EnemySystem::new(5000, boids_movement);
+    let mut enemies = EnemySystem::new(3000, boids_movement).await;
     enemies.spawn_all();
 
     loop {

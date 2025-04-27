@@ -5,37 +5,50 @@ pub struct Player {
     pub y: f32,
     speed: f32,
     size: f32,
+    texture: Option<Texture2D>,
+    rotation: f32, // For sprite orientation
+    last_movement: Vec2, // Track last movement direction
 }
 
 impl Player {
-    pub fn new(x: f32, y: f32) -> Self {
+    pub async fn new(x: f32, y: f32) -> Self {
+        let texture = match load_texture("assets/player.png").await {
+            Ok(t) => Some(t),
+            Err(_) => {
+                println!("Failed to load player texture, falling back to rectangle");
+                None
+            }
+        };
+
         Player {
             x,
             y,
             speed: 5.0,
-            size: 10.0,
+            size: 16.0,
+            texture,
+            rotation: 0.0,
+            last_movement: Vec2::ZERO,
         }
     }
 
     pub fn update(&mut self) {
-        let mut move_x = 0.0;
-        let mut move_y = 0.0;
+        let mut move_dir = Vec2::ZERO;
 
         // Handle both WASD and Arrow keys
-        if is_key_down(KeyCode::Right) || is_key_down(KeyCode::D) { move_x += 1.0; }
-        if is_key_down(KeyCode::Left) || is_key_down(KeyCode::A) { move_x -= 1.0; }
-        if is_key_down(KeyCode::Down) || is_key_down(KeyCode::S) { move_y += 1.0; }
-        if is_key_down(KeyCode::Up) || is_key_down(KeyCode::W) { move_y -= 1.0; }
+        if is_key_down(KeyCode::Right) || is_key_down(KeyCode::D) { move_dir.x += 1.0; }
+        if is_key_down(KeyCode::Left) || is_key_down(KeyCode::A) { move_dir.x -= 1.0; }
+        if is_key_down(KeyCode::Down) || is_key_down(KeyCode::S) { move_dir.y += 1.0; }
+        if is_key_down(KeyCode::Up) || is_key_down(KeyCode::W) { move_dir.y -= 1.0; }
 
-        // Normalize diagonal movement
-        if move_x != 0.0 && move_y != 0.0 {
-            let inv_sqrt_2 = 1.0 / std::f32::consts::SQRT_2;
-            move_x *= inv_sqrt_2;
-            move_y *= inv_sqrt_2;
+        // Normalize and update rotation
+        if move_dir.length_squared() > 0.0 {
+            move_dir = move_dir.normalize();
+            self.last_movement = move_dir;
+            // No rotation calculation needed anymore
         }
 
-        self.x += move_x * self.speed;
-        self.y += move_y * self.speed;
+        self.x += move_dir.x * self.speed;
+        self.y += move_dir.y * self.speed;
 
         // Keep player on screen
         self.x = self.x.clamp(0.0, screen_width() - self.size);
@@ -43,7 +56,22 @@ impl Player {
     }
 
     pub fn draw(&self) {
-        draw_rectangle(self.x, self.y, self.size, self.size, GREEN);
+        match &self.texture {
+            Some(texture) => {
+                let flip_x = self.last_movement.x < 0.0; // Only flip horizontally when moving left
+                let params = DrawTextureParams {
+                    dest_size: Some(Vec2::new(self.size, self.size)),
+                    flip_x, // This handles the mirroring
+                    rotation: 0.0, // No rotation
+                    ..Default::default()
+                };
+                draw_texture_ex(texture, self.x, self.y, WHITE, params);
+            }
+            None => {
+                // Fallback to rectangle if no texture
+                draw_rectangle(self.x, self.y, self.size, self.size, BLUE);
+            }
+        }
     }
 
     pub fn position(&self) -> Vec2 {
