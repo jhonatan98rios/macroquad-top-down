@@ -1,16 +1,19 @@
 mod boids;
-mod direct;
-mod sinusoidal;
 
 pub use boids::BoidsMovement;
-pub use direct::DirectMovement;
-pub use sinusoidal::SinusoidalMovement;
 
 use macroquad::prelude::*;
 
 #[allow(dead_code)]
 pub trait MovementStrategy: Send + Sync {
-    fn move_enemy(&self, x: &mut f32, y: &mut f32, target: (f32, f32), time: f32, index: usize, all_positions: &[(f32, f32)]);
+    fn move_enemy(
+        &self, 
+        position: &mut Vec2,
+        target: Vec2,
+        time: f32,
+        index: usize,
+        all_positions: &[Vec2]
+    );
 }
 
 #[derive(Clone)]

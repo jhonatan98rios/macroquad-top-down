@@ -5,7 +5,7 @@ mod strategies;
 
 use player::Player;
 use enemies::EnemySystem;
-use strategies::{BoidsMovement, DirectMovement, SinusoidalMovement};
+use strategies::{BoidsMovement};
 use macroquad::prelude::*;
 
 
@@ -16,28 +16,19 @@ async fn main() {
     let mut player = Player::new(100.0, 100.0);
 
     #[allow(unused_variables)]
-    let direct_enemy_strategy = Box::new(DirectMovement {
-        speed: 2.0,
-    });
-
-    #[allow(unused_variables)]
-    let sinusoidal_movement = Box::new(SinusoidalMovement {
-        speed: 1.0, 
-        amplitude: 2.0,
-        frequency: 0.5,
-    });
-
-    #[allow(unused_variables)]
     let boids_movement = Box::new(BoidsMovement {
-        visual_range: 50.0,
-        separation_dist: 20.0,
+        visual_range: 10.0,
+        separation_dist: 30.0,
         max_speed: 2.0,
-        player_weight: 0.7,
-        player_distance: 25.0,
-        noise_strength: 0.4
+        player_weight: 0.8,
+        player_distance: 2000.0,
+        noise_strength: 0.1,
+        separation_weight: 3.0,
+        alignment_weight: 1.2,
+        cohesion_weight: 0.8,
     });
     
-    let mut enemies = EnemySystem::new(10, boids_movement);
+    let mut enemies = EnemySystem::new(100, boids_movement);
     enemies.spawn_all();
 
     loop {

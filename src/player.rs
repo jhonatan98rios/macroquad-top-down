@@ -46,7 +46,7 @@ impl Player {
         draw_rectangle(self.x, self.y, self.size, self.size, GREEN);
     }
 
-    pub fn position(&self) -> (f32, f32) {
-        (self.x, self.y)
+    pub fn position(&self) -> Vec2 {
+        Vec2::new(self.x, self.y)
     }
 }

@@ -1,4 +1,4 @@
-use super::{MovementStrategy, EnemyData};
+use super::MovementStrategy;
 use macroquad::prelude::*;
 
 pub struct BoidsMovement {
@@ -7,45 +7,60 @@ pub struct BoidsMovement {
     pub max_speed: f32,
     pub player_weight: f32,
     pub player_distance: f32,
-    pub noise_strength: f32
+    pub noise_strength: f32,
+    pub separation_weight: f32,
+    pub alignment_weight: f32,
+    pub cohesion_weight: f32,
+}
+
+impl Default for BoidsMovement {
+    fn default() -> Self {
+        Self {
+            visual_range: 50.0,
+            separation_dist: 20.0,
+            max_speed: 2.0,
+            player_weight: 0.7,
+            player_distance: 150.0,
+            noise_strength: 0.4,
+            separation_weight: 1.5,
+            alignment_weight: 1.0,
+            cohesion_weight: 1.0,
+        }
+    }
 }
 
 impl MovementStrategy for BoidsMovement {
     fn move_enemy(
         &self,
-        x: &mut f32,
-        y: &mut f32,
-        target: (f32, f32),
-        time: f32,
+        position: &mut Vec2,
+        target: Vec2,
+        _time: f32,
         index: usize,
-        all_positions: &[(f32, f32)],
+        all_positions: &[Vec2],
     ) {
-        let visual_range = self.visual_range;
-        let separation_dist = self.separation_dist;
-        let player_distance = self.player_distance;
-        let player_weight = self.player_weight;
-        let max_speed = self.max_speed;
-        let noise_strength = self.noise_strength;
-
-        let mut sep = Vec2::ZERO;
-        let mut ali = Vec2::ZERO;
-        let mut coh = Vec2::ZERO;
+        let mut separation = Vec2::ZERO;
+        let mut alignment = Vec2::ZERO;
+        let mut cohesion = Vec2::ZERO;
         let mut neighbors = 0;
 
-        let pos_i = Vec2::new(*x, *y);
+        for (i, &other_pos) in all_positions.iter().enumerate() {
+            if i == index { continue; }
 
-        for (j, &(other_x, other_y)) in all_positions.iter().enumerate() {
-            if j == index { continue; }
+            let dist = position.distance(other_pos);
 
-            let pos_j = Vec2::new(other_x, other_y);
-            let dist = pos_i.distance(pos_j);
-
-            if dist < visual_range {
-                if dist < separation_dist {
-                    sep += (pos_i - pos_j) / dist;
+            if dist < self.visual_range {
+                // Separation: steer to avoid crowding
+                if dist < self.separation_dist {
+                    let separation_force = (1.0 - (dist / self.separation_dist)).powf(2.0);
+                    separation += (*position - other_pos).normalize() * separation_force;
                 }
-                ali += pos_j;
-                coh += pos_j;
+
+                // Alignment: steer towards average heading
+                alignment += (other_pos - *position).normalize_or_zero();
+
+                // Cohesion: steer towards average position
+                cohesion += other_pos;
+                
                 neighbors += 1;
             }
         }
@@ -54,25 +69,34 @@ impl MovementStrategy for BoidsMovement {
 
         if neighbors > 0 {
             let n = neighbors as f32;
-            velocity += (ali / n - pos_i).normalize_or_zero();
-            velocity += (coh / n - pos_i).normalize_or_zero();
-            velocity += sep.normalize_or_zero();
-            velocity *= max_speed;
+            separation = separation.normalize_or_zero() * self.separation_weight;
+            alignment = (alignment / n).normalize_or_zero() * self.alignment_weight;
+            cohesion = ((cohesion / n) - *position).normalize_or_zero() * self.cohesion_weight;
+
+            velocity += separation + alignment + cohesion;
         }
 
-        let to_player = Vec2::new(target.0, target.1) - pos_i;
-        if to_player.length() < player_distance {
-            velocity += to_player.normalize_or_zero() * player_weight;
-        }
+        // Player attraction/repulsion
+        let to_player = target - *position;
+        // With this more gradual influence:
+        let player_dist = to_player.length();
+        let player_influence = 1.0 - (player_dist / self.player_distance).min(1.0).max(0.0);
+        velocity += to_player.normalize_or_zero() * 
+            self.player_weight * 
+            player_influence.powf(0.5); // More gradual falloff
 
-        let noise = Vec2::new(
+        // Add some randomness
+        velocity += Vec2::new(
             rand::gen_range(-1.0, 1.0),
             rand::gen_range(-1.0, 1.0),
-        ) * noise_strength;
+        ) * self.noise_strength;
 
-        velocity += noise;
+        // Apply movement
+        velocity = velocity.normalize_or_zero() * self.max_speed;
+        *position += velocity;
 
-        *x += velocity.x;
-        *y += velocity.y;
+        // Optional: Keep enemies within screen bounds
+        position.x = position.x.clamp(0.0, screen_width());
+        position.y = position.y.clamp(0.0, screen_height());
     }
 }
