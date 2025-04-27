@@ -1,5 +1,6 @@
-use super::movement_strategy::MovementStrategy;
+
 use macroquad::prelude::*;
+use crate::strategies::MovementStrategy;
 
 #[derive(Clone, Copy, PartialEq)]
 pub enum EnemyStatus {

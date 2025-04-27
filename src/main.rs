@@ -1,11 +1,12 @@
-use macroquad::prelude::*;
 
 mod player;
 mod enemies;
+mod strategies;
 
 use player::Player;
-use enemies::{EnemySystem, DirectMovement, SinusoidalMovement, BoidsMovement};
-
+use enemies::EnemySystem;
+use strategies::{BoidsMovement, DirectMovement, SinusoidalMovement, ZigzagMovement, OrbitMovement};
+use macroquad::prelude::*;
 
 
 #[macroquad::main("Macroquad WASM Game")]
@@ -28,19 +29,30 @@ async fn main() {
 
     #[allow(unused_variables)]
     let boids_movement = Box::new(BoidsMovement {
-        max_speed: 2.5,          // Slower movement
-        max_force: 0.3,          // More gradual turns
-        separation_distance: 10.0, // More personal space
-        alignment_distance: 50.0,
-        cohesion_distance: 75.0,
-        separation_weight: 1.0,   // More avoidance
-        alignment_weight: 0.8,
-        cohesion_weight: 0.7,
-        target_weight: 5.0,       // Stronger follow
+        visual_range: 50.0,
+        separation_dist: 20.0,
+        max_speed: 2.0,
+        player_weight: 0.7,
+        player_distance: 25.0,
+        noise_strength: 0.4,
+    });
+
+    #[allow(unused_variables)]
+    let zigzag_movement = Box::new(ZigzagMovement {
+        speed: 2.0,
+        amplitude: 20.0,
+        frequency: 0.1,
+    });
+
+    #[allow(unused_variables)]
+    let orbit_movement = Box::new(OrbitMovement {
+        speed: 5.0,
+        radius: 50.0,
+        angular_speed: 0.5,
     });
 
     
-    let mut enemies = EnemySystem::new(1000, direct_enemy_strategy);
+    let mut enemies = EnemySystem::new(10, boids_movement);
     enemies.spawn_all();
 
     loop {
@@ -58,7 +70,7 @@ async fn main() {
         draw_text(
             &format!("WASD or Arrows to move | FPS: {}", get_fps()),
             20.0,
-            20.0,
+            30.0,
             30.0,
             WHITE,
         );
