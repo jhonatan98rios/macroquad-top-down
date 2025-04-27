@@ -1,4 +1,4 @@
-use super::{MovementStrategy, EnemyData};
+use super::{MovementStrategy};
 use macroquad::prelude::*;
 
 // Direct movement toward player
@@ -7,7 +7,7 @@ pub struct DirectMovement {
 }
 
 impl MovementStrategy for DirectMovement {
-    fn move_enemy(&self, x: &mut f32, y: &mut f32, target: (f32, f32), _time: f32, _index: usize) {
+    fn move_enemy(&self, x: &mut f32, y: &mut f32, target: (f32, f32), _time: f32, _index: usize, _all_positions: &[(f32, f32)]) {
         let dx = target.0 - *x;
         let dy = target.1 - *y;
         let dist = (dx * dx + dy * dy).sqrt().max(0.0001);
@@ -15,7 +15,4 @@ impl MovementStrategy for DirectMovement {
         *x += (dx / dist) * self.speed;
         *y += (dy / dist) * self.speed;
     }
-
-    #[allow(unused_variables)]
-    fn batch_update(&self, enemies: &mut [EnemyData], target: (f32, f32), time: f32) {}
 }

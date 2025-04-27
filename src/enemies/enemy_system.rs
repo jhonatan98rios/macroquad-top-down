@@ -46,6 +46,11 @@ impl EnemySystem {
     
     pub fn update(&mut self, target_pos: (f32, f32)) {
         self.time += get_frame_time();
+
+        // We dont have enemies, only pos_x: Vec<f32>, pos_y: Vec<f32>, width: Vec<f32>, height: Vec<f32>,
+        let positions: Vec<(f32, f32)> = self.pos_x.iter().zip(self.pos_y.iter())
+            .map(|(&x, &y)| (x, y)) // Collect positions as tuples
+            .collect();
         
         for i in 0..self.count {
             if self.status[i] == EnemyStatus::Live {
@@ -54,7 +59,8 @@ impl EnemySystem {
                     &mut self.pos_y[i],
                     target_pos,
                     self.time,
-                    i
+                    i,
+                    &positions,
                 );
             }
         }

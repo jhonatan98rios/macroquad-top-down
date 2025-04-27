@@ -1,4 +1,4 @@
-use super::{MovementStrategy, EnemyData};
+use super::{MovementStrategy};
 use macroquad::prelude::*;
 
 // Sinusoidal movement pattern
@@ -9,7 +9,7 @@ pub struct SinusoidalMovement {
 }
 
 impl MovementStrategy for SinusoidalMovement {
-    fn move_enemy(&self, x: &mut f32, y: &mut f32, target: (f32, f32), time: f32, _index: usize) {
+    fn move_enemy(&self, x: &mut f32, y: &mut f32, target: (f32, f32), time: f32, _index: usize, _all_positions: &[(f32, f32)],) {
         let dx = target.0 - *x;
         let dy = target.1 - *y;
         let dist = (dx * dx + dy * dy).sqrt().max(0.0001);
@@ -17,7 +17,4 @@ impl MovementStrategy for SinusoidalMovement {
         *x += (dx / dist) * self.speed + time.sin() * self.amplitude * self.frequency;
         *y += (dy / dist) * self.speed + time.cos() * self.amplitude * self.frequency;
     }
-
-    #[allow(unused_variables)]
-    fn batch_update(&self, enemies: &mut [EnemyData], target: (f32, f32), time: f32) {}
 }
