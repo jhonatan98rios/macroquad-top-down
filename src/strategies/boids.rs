@@ -1,5 +1,6 @@
 use super::MovementStrategy;
 use macroquad::prelude::*;
+use crate::constants::{WORLD_WIDTH, WORLD_HEIGHT};
 
 pub struct BoidsMovement {
     pub visual_range: f32,
@@ -80,7 +81,7 @@ impl MovementStrategy for BoidsMovement {
         *position += velocity;
 
         // Optional: Keep enemies within screen bounds
-        position.x = position.x.clamp(0.0, screen_width());
-        position.y = position.y.clamp(0.0, screen_height());
+        position.x = position.x.clamp(0.0, WORLD_WIDTH);
+        position.y = position.y.clamp(0.0, WORLD_HEIGHT);
     }
 }

@@ -2,10 +2,14 @@
 mod player;
 mod enemies;
 mod strategies;
+mod constants;
 
 use player::Player;
 use enemies::EnemySystem;
 use strategies::{BoidsMovement};
+use constants::{WORLD_WIDTH, WORLD_HEIGHT};
+
+
 use macroquad::prelude::*;
 
 
@@ -31,8 +35,18 @@ async fn main() {
     let mut enemies = EnemySystem::new(3000, boids_movement).await;
     enemies.spawn_all();
 
+    let mut camera = Camera2D {
+        zoom: vec2(2.0 / screen_width(), -2.0 / screen_height()), // Deixa 1:1 normal
+        ..Default::default()
+    };
+
     loop {
         clear_background(BLACK);
+        camera.target = clamp_camera_target(player.position());
+        set_camera(&camera);
+
+        // Draw the floor
+        draw_rectangle(0.0, 0.0, WORLD_WIDTH, WORLD_HEIGHT, Color::from_rgba(30, 30, 30, 255));
 
         // Update and draw player
         player.update();
@@ -43,6 +57,7 @@ async fn main() {
         enemies.draw();
 
         // Display debug info
+        set_default_camera();
         draw_text(
             &format!("WASD or Arrows to move | FPS: {}", get_fps()),
             20.0,
@@ -53,4 +68,15 @@ async fn main() {
 
         next_frame().await;
     }
+}
+
+#[inline]
+fn clamp_camera_target(player_position: Vec2) -> Vec2 {
+    let half_screen_width = screen_width() / 2.0;
+    let half_screen_height = screen_height() / 2.0;
+
+    Vec2::new(
+        player_position.x.clamp(half_screen_width, WORLD_WIDTH - half_screen_width),
+        player_position.y.clamp(half_screen_height, WORLD_HEIGHT - half_screen_height),
+    )
 }

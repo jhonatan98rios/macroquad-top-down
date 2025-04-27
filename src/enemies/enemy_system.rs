@@ -1,5 +1,6 @@
 use macroquad::prelude::*;
 use crate::strategies::MovementStrategy;
+use crate::constants::{WORLD_WIDTH, WORLD_HEIGHT};
 use std::cmp;
 
 #[derive(Clone, Copy, PartialEq)]
@@ -39,8 +40,8 @@ impl EnemySystem {
 
         let positions = (0..count)
             .map(|_| vec2(
-                rand::gen_range(0.0, screen_width()),
-                rand::gen_range(0.0, screen_height())
+                rand::gen_range(0.0, WORLD_WIDTH),
+                rand::gen_range(0.0, WORLD_HEIGHT),
             ))
             .collect();
             

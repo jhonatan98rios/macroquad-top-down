@@ -1,4 +1,5 @@
 use macroquad::prelude::*;
+use crate::constants::{ WORLD_HEIGHT, WORLD_WIDTH };
 
 pub struct Player {
     pub x: f32,
@@ -48,11 +49,11 @@ impl Player {
         }
 
         self.x += move_dir.x * self.speed;
-        self.y += move_dir.y * self.speed;
+        self.y -= move_dir.y * self.speed;
 
         // Keep player on screen
-        self.x = self.x.clamp(0.0, screen_width() - self.size);
-        self.y = self.y.clamp(0.0, screen_height() - self.size);
+        self.x = self.x.clamp(0.0, WORLD_WIDTH - self.size);
+        self.y = self.y.clamp(0.0, WORLD_HEIGHT - self.size);
     }
 
     pub fn draw(&self) {
