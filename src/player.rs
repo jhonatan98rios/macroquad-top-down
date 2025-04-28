@@ -7,13 +7,12 @@ pub struct Player {
     speed: f32,
     size: f32,
     texture: Option<Texture2D>,
-    rotation: f32, // For sprite orientation
     last_movement: Vec2, // Track last movement direction
 }
 
 impl Player {
     pub async fn new(x: f32, y: f32) -> Self {
-        let texture = match load_texture("assets/player.png").await {
+        let texture = match load_texture("assets/player_sprite.png").await {
             Ok(t) => Some(t),
             Err(_) => {
                 println!("Failed to load player texture, falling back to rectangle");
@@ -25,9 +24,8 @@ impl Player {
             x,
             y,
             speed: 5.0,
-            size: 16.0,
+            size: 64.0,
             texture,
-            rotation: 0.0,
             last_movement: Vec2::ZERO,
         }
     }
@@ -63,7 +61,12 @@ impl Player {
                 let params = DrawTextureParams {
                     dest_size: Some(Vec2::new(self.size, self.size)),
                     flip_x, // This handles the mirroring
-                    rotation: 0.0, // No rotation
+                    source: Some(Rect {
+                        x: 0.0,
+                        y: self.texture.as_ref().unwrap().height(),
+                        w: self.texture.as_ref().unwrap().width(),
+                        h: -self.texture.as_ref().unwrap().height(), // <- h negativo inverte o Y
+                    }),
                     ..Default::default()
                 };
                 draw_texture_ex(texture, self.x, self.y, WHITE, params);

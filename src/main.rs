@@ -21,8 +21,8 @@ async fn main() {
 
     #[allow(unused_variables)]
     let boids_movement = Box::new(BoidsMovement {
-        visual_range: 18.0,
-        separation_dist: 25.0,
+        visual_range: 32.0,
+        separation_dist: 40.0,
         max_speed: 2.0,
         player_weight: 0.8,
         player_distance: 2000.0, 

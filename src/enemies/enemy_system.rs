@@ -4,6 +4,7 @@ use crate::constants::{WORLD_WIDTH, WORLD_HEIGHT};
 use std::cmp;
 
 #[derive(Clone, Copy, PartialEq)]
+#[allow(dead_code)]
 pub enum EnemyStatus {
     Pending,
     Live,
@@ -45,7 +46,7 @@ impl EnemySystem {
             ))
             .collect();
             
-        let sizes = vec![vec2(16.0, 16.0); count];
+        let sizes = vec![vec2(64.0, 64.0); count];
         let data = vec![EnemyData { 
             status: EnemyStatus::Pending,
             last_movement: Vec2::new(1.0, 0.0) 
@@ -114,7 +115,12 @@ impl EnemySystem {
                         let params = DrawTextureParams {
                             dest_size: Some(self.sizes[i]),
                             flip_x,
-                            rotation: 0.0,
+                            source: Some(Rect {
+                                x: 0.0,
+                                y: self.texture.as_ref().unwrap().height(),
+                                w: self.texture.as_ref().unwrap().width(),
+                                h: -self.texture.as_ref().unwrap().height(), // <- h negativo inverte o Y
+                            }),
                             ..Default::default()
                         };
                         draw_texture_ex(
