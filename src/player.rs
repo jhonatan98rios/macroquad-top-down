@@ -7,12 +7,15 @@ pub struct Player {
     speed: f32,
     size: f32,
     texture: Option<Texture2D>,
-    last_movement: Vec2, // Track last movement direction
+    last_movement: Vec2,
+    current_frame: usize,
+    frame_timer: f32,
+    frame_duration: f32,
 }
 
 impl Player {
     pub async fn new(x: f32, y: f32) -> Self {
-        let texture = match load_texture("assets/player_sprite.png").await {
+        let texture = match load_texture("assets/player_spritesheet.png").await {
             Ok(t) => Some(t),
             Err(_) => {
                 println!("Failed to load player texture, falling back to rectangle");
@@ -27,52 +30,60 @@ impl Player {
             size: 64.0,
             texture,
             last_movement: Vec2::ZERO,
+            current_frame: 0,
+            frame_timer: 0.0,
+            frame_duration: 0.15, // Cada frame dura 150ms
         }
     }
 
     pub fn update(&mut self) {
         let mut move_dir = Vec2::ZERO;
 
-        // Handle both WASD and Arrow keys
         if is_key_down(KeyCode::Right) || is_key_down(KeyCode::D) { move_dir.x += 1.0; }
         if is_key_down(KeyCode::Left) || is_key_down(KeyCode::A) { move_dir.x -= 1.0; }
         if is_key_down(KeyCode::Down) || is_key_down(KeyCode::S) { move_dir.y += 1.0; }
         if is_key_down(KeyCode::Up) || is_key_down(KeyCode::W) { move_dir.y -= 1.0; }
 
-        // Normalize and update rotation
         if move_dir.length_squared() > 0.0 {
             move_dir = move_dir.normalize();
             self.last_movement = move_dir;
-            // No rotation calculation needed anymore
         }
 
         self.x += move_dir.x * self.speed;
         self.y -= move_dir.y * self.speed;
 
-        // Keep player on screen
         self.x = self.x.clamp(0.0, WORLD_WIDTH - self.size);
         self.y = self.y.clamp(0.0, WORLD_HEIGHT - self.size);
+
+        // Atualiza animação
+        self.frame_timer += get_frame_time();
+        if self.frame_timer >= self.frame_duration {
+            self.frame_timer = 0.0;
+            self.current_frame = (self.current_frame + 1) % 4; // Temos 4 frames (0, 1, 2, 3)
+        }
     }
 
     pub fn draw(&self) {
         match &self.texture {
             Some(texture) => {
-                let flip_x = self.last_movement.x < 0.0; // Only flip horizontally when moving left
+                let flip_x = self.last_movement.x < 0.0;
+                let frame_width = self.size;
+                let frame_height = self.size;
+
                 let params = DrawTextureParams {
                     dest_size: Some(Vec2::new(self.size, self.size)),
-                    flip_x, // This handles the mirroring
+                    flip_x,
                     source: Some(Rect {
-                        x: 0.0,
-                        y: self.texture.as_ref().unwrap().height(),
-                        w: self.texture.as_ref().unwrap().width(),
-                        h: -self.texture.as_ref().unwrap().height(), // <- h negativo inverte o Y
+                        x: self.current_frame as f32 * frame_width,
+                        y: texture.height(),  // Começando do topo da imagem
+                        w: frame_width,
+                        h: -frame_height, // h negativo para inverter
                     }),
                     ..Default::default()
                 };
                 draw_texture_ex(texture, self.x, self.y, WHITE, params);
             }
             None => {
-                // Fallback to rectangle if no texture
                 draw_rectangle(self.x, self.y, self.size, self.size, BLUE);
             }
         }
