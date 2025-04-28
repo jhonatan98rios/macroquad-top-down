@@ -107,7 +107,12 @@ impl EnemySystem {
     pub fn draw(&self, target_pos: Vec2) {
         match &self.texture {
             Some(texture) => {
-                for i in 0..self.positions.len() {
+
+                let mut indices: Vec<usize> = (0..self.positions.len()).collect();
+                indices.sort_by(|&a, &b| self.positions[b].y.partial_cmp(&self.positions[a].y).unwrap());
+            
+
+                for &i in &indices {
                     if self.data[i].status == EnemyStatus::Live {
                         
                         let flip_x = self.positions[i].x > target_pos.x;
