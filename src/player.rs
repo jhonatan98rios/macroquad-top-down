@@ -32,7 +32,7 @@ impl Player {
             last_movement: Vec2::ZERO,
             current_frame: 0,
             frame_timer: 0.0,
-            frame_duration: 0.15, // Cada frame dura 150ms
+            frame_duration: 0.15,
         }
     }
 
@@ -59,7 +59,7 @@ impl Player {
         self.frame_timer += get_frame_time();
         if self.frame_timer >= self.frame_duration {
             self.frame_timer = 0.0;
-            self.current_frame = (self.current_frame + 1) % 4; // Temos 4 frames (0, 1, 2, 3)
+            self.current_frame = (self.current_frame + 1) % 4;
         }
     }
 
@@ -77,7 +77,7 @@ impl Player {
                         x: self.current_frame as f32 * frame_width,
                         y: texture.height(),  // Começando do topo da imagem
                         w: frame_width,
-                        h: -frame_height, // h negativo para inverter
+                        h: -frame_height,
                     }),
                     ..Default::default()
                 };

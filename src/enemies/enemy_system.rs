@@ -11,6 +11,11 @@ pub enum EnemyStatus {
     Dead,
 }
 
+pub enum PositionOverlap {
+    Behind,
+    InFront,
+}
+
 #[derive(Clone, Copy)]
 pub struct EnemyData {
     pub status: EnemyStatus,
@@ -18,20 +23,23 @@ pub struct EnemyData {
 }
 
 pub struct EnemySystem {
-    positions: Vec<Vec2>,
+    pub positions: Vec<Vec2>,
     sizes: Vec<Vec2>,
     data: Vec<EnemyData>,
     strategy: Box<dyn MovementStrategy>,
     time: f32,
     chunk_index: usize,
     max_number_of_chunks: usize,
-    texture: Option<Texture2D>, // Single texture for all enemies
+    texture: Option<Texture2D>,
+    current_frame: usize,
+    frame_timer: f32,
+    frame_duration: f32,
 }
 
 impl EnemySystem {
     pub async  fn new(count: usize, strategy: Box<dyn MovementStrategy>) -> Self {
         
-        let texture = match load_texture("assets/enemy.png").await {
+        let texture = match load_texture("assets/enemy_spritesheet.png").await {
             Ok(t) => Some(t),
             Err(_) => {
                 println!("Failed to load enemy texture, falling back to rectangles");
@@ -59,8 +67,11 @@ impl EnemySystem {
             strategy,
             time: 0.0,
             chunk_index: 0,
-            max_number_of_chunks: 4, // Number of chunks to divide the enemies into for processing (bigger is faster)
+            max_number_of_chunks: 2,
             texture,
+            current_frame: 0,
+            frame_timer: 0.0,
+            frame_duration: 0.15,
         }
     }
     
@@ -102,29 +113,48 @@ impl EnemySystem {
                 }
             }
         }
+
+        // Atualiza animação
+        self.frame_timer += get_frame_time();
+        if self.frame_timer >= self.frame_duration {
+            self.frame_timer = 0.0;
+            self.current_frame = (self.current_frame + 1) % 4;
+        }
     }
     
-    pub fn draw(&self, target_pos: Vec2) {
+    pub fn draw(&self, target_pos: Vec2, overlap: PositionOverlap) {
         match &self.texture {
             Some(texture) => {
 
-                let mut indices: Vec<usize> = (0..self.positions.len()).collect();
-                indices.sort_by(|&a, &b| self.positions[b].y.partial_cmp(&self.positions[a].y).unwrap());
-            
+                // Draw enemies in the specified overlap order
+                let indices: Vec<usize> = (0..self.positions.len()).collect();
+                
+                // filter indices based on overlap
+                let mut filtered_indices: Vec<usize> = indices.iter().filter(|&&i| {
+                    match overlap {
+                        PositionOverlap::Behind => self.positions[i].y > target_pos.y,
+                        PositionOverlap::InFront => self.positions[i].y < target_pos.y,
+                    }
+                }).cloned().collect();
 
-                for &i in &indices {
+                // Sort indices by y position for correct drawing order
+                filtered_indices.sort_by(|&a, &b| self.positions[b].y.partial_cmp(&self.positions[a].y).unwrap());
+
+                for &i in &filtered_indices {
                     if self.data[i].status == EnemyStatus::Live {
                         
                         let flip_x = self.positions[i].x > target_pos.x;
+                        let frame_width = self.sizes[i].x;
+                        let frame_height = self.sizes[i].y;
                         
                         let params = DrawTextureParams {
                             dest_size: Some(self.sizes[i]),
                             flip_x,
                             source: Some(Rect {
-                                x: 0.0,
-                                y: self.texture.as_ref().unwrap().height(),
-                                w: self.texture.as_ref().unwrap().width(),
-                                h: -self.texture.as_ref().unwrap().height(), // <- h negativo inverte o Y
+                                x: self.current_frame as f32 * frame_width,
+                                y: texture.height(),
+                                w: frame_width,
+                                h: -frame_height,
                             }),
                             ..Default::default()
                         };
