@@ -75,7 +75,7 @@ impl Player {
                     flip_x,
                     source: Some(Rect {
                         x: self.current_frame as f32 * frame_width,
-                        y: texture.height(),  // Começando do topo da imagem
+                        y: texture.height(),
                         w: frame_width,
                         h: -frame_height,
                     }),

@@ -67,7 +67,7 @@ impl EnemySystem {
             strategy,
             time: 0.0,
             chunk_index: 0,
-            max_number_of_chunks: 2,
+            max_number_of_chunks: 4,
             texture,
             current_frame: 0,
             frame_timer: 0.0,

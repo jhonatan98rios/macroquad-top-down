@@ -16,10 +16,8 @@ use macroquad::prelude::*;
 #[macroquad::main("Macroquad WASM Game")]
 async fn main() {
 
-    // Create player
     let mut player = Player::new(100.0, 100.0).await;
 
-    #[allow(unused_variables)]
     let boids_movement = Box::new(BoidsMovement {
         visual_range: 32.0,
         separation_dist: 40.0,
@@ -32,7 +30,7 @@ async fn main() {
         cohesion_weight: 0.3,
     });
     
-    let mut enemies = EnemySystem::new(4000, boids_movement).await;
+    let mut enemies = EnemySystem::new(8_000, boids_movement).await;
     enemies.spawn_all();
 
     let mut camera = Camera2D {
@@ -42,10 +40,13 @@ async fn main() {
 
     loop {
         clear_background(BLACK);
+        
+        // Update zoom every frame
+        camera.zoom = vec2(2.0 / screen_width(), -2.0 / screen_height());
+
         camera.target = clamp_camera_target(player.position());
         set_camera(&camera);
 
-        // Draw the floor
         draw_rectangle(0.0, 0.0, WORLD_WIDTH, WORLD_HEIGHT, Color::from_rgba(30, 30, 30, 255));
 
         player.update();
@@ -55,7 +56,6 @@ async fn main() {
         player.draw();
         enemies.draw(player.position(),PositionOverlap::InFront);
 
-        // Display debug info
         set_default_camera();
         draw_text(
             &format!("WASD or Arrows to move | FPS: {} | enemies {}", get_fps(), enemies.positions.len()),
