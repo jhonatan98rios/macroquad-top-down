@@ -1,6 +1,6 @@
 use macroquad::prelude::*;
 use crate::components::DrawableComponent;
-
+use crate::components::layout::{ is_mobile };
 pub struct Button<'a> {
     pub rect: Rect,
     pub label: &'a str,
@@ -35,7 +35,7 @@ impl<'a> Button<'a> {
 
         draw_rectangle(self.rect.x, self.rect.y, self.rect.w, self.rect.h, bg_color);
 
-        let font_size = 30.0;
+        let font_size = if is_mobile() { 50.0 } else { 30.0 };
         let text_dim = measure_text(self.label, None, font_size as u16, 1.0);
         draw_text(
             self.label,
