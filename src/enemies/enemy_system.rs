@@ -39,7 +39,7 @@ pub struct EnemySystem {
 impl EnemySystem {
     pub async  fn new(count: usize, strategy: Box<dyn MovementStrategy>) -> Self {
         
-        let texture = match load_texture("assets/enemy_spritesheet.png").await {
+        let texture = match load_texture("images/enemy_spritesheet.png").await {
             Ok(t) => Some(t),
             Err(_) => {
                 println!("Failed to load enemy texture, falling back to rectangles");

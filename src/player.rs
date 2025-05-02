@@ -15,7 +15,7 @@ pub struct Player {
 
 impl Player {
     pub async fn new(x: f32, y: f32) -> Self {
-        let texture = match load_texture("assets/player_spritesheet.png").await {
+        let texture = match load_texture("images/player_spritesheet.png").await {
             Ok(t) => Some(t),
             Err(_) => {
                 println!("Failed to load player texture, falling back to rectangle");
@@ -26,13 +26,13 @@ impl Player {
         Player {
             x,
             y,
-            speed: 5.0,
+            speed: 4.0,
             size: 64.0,
             texture,
             last_movement: Vec2::ZERO,
             current_frame: 0,
             frame_timer: 0.0,
-            frame_duration: 0.15,
+            frame_duration: 0.30,
         }
     }
 
@@ -44,23 +44,7 @@ impl Player {
         if is_key_down(KeyCode::Down) || is_key_down(KeyCode::S) { move_dir.y += 1.0; }
         if is_key_down(KeyCode::Up) || is_key_down(KeyCode::W) { move_dir.y -= 1.0; }
 
-        if move_dir.length_squared() > 0.0 {
-            move_dir = move_dir.normalize();
-            self.last_movement = move_dir;
-        }
-
-        self.x += move_dir.x * self.speed;
-        self.y -= move_dir.y * self.speed;
-
-        self.x = self.x.clamp(0.0, WORLD_WIDTH - self.size);
-        self.y = self.y.clamp(0.0, WORLD_HEIGHT - self.size);
-
-        // Atualiza animação
-        self.frame_timer += get_frame_time();
-        if self.frame_timer >= self.frame_duration {
-            self.frame_timer = 0.0;
-            self.current_frame = (self.current_frame + 1) % 4;
-        }
+        self.move_by_direction(move_dir);
     }
 
     pub fn draw(&self) {
@@ -91,5 +75,35 @@ impl Player {
 
     pub fn position(&self) -> Vec2 {
         Vec2::new(self.x, self.y)
+    }
+
+    pub fn move_by_direction(&mut self, direction: Vec2) {
+        let mut move_dir = direction;
+    
+        if move_dir.length_squared() > 0.0 {
+            move_dir = move_dir.normalize();
+            self.last_movement = move_dir;
+    
+            self.x += move_dir.x * self.speed;
+            self.y -= move_dir.y * self.speed;
+    
+            self.x = self.x.clamp(0.0, WORLD_WIDTH - self.size);
+            self.y = self.y.clamp(0.0, WORLD_HEIGHT - self.size);
+        }
+    
+        // Atualiza animação
+        self.frame_timer += get_frame_time();
+        if self.frame_timer >= self.frame_duration {
+            self.frame_timer = 0.0;
+            self.current_frame = (self.current_frame + 1) % 4;
+        }
+    }
+
+    pub fn update_with_direction(&mut self, joystick_dir: Option<Vec2>) {
+        if let Some(dir) = joystick_dir {
+            self.move_by_direction(dir);
+        } else {
+            self.update(); // fallback pro teclado
+        }
     }
 }

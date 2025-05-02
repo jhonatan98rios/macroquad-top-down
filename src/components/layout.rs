@@ -1,5 +1,3 @@
-// components/layout.rs
-
 use macroquad::prelude::*;
 use crate::components::DrawableComponent;
 
@@ -35,13 +33,13 @@ impl<'a> Column<'a> {
 
     pub fn draw(&mut self) {
         for child in self.children.iter_mut() {
-            // Aqui, você pode evoluir para passar a posição para os filhos.
             child.draw();
         }
     }
 }
 
 pub fn is_mobile() -> bool {
+    // return true;
     let width = screen_width();
     let height = screen_height();
     let aspect_ratio = height / width;

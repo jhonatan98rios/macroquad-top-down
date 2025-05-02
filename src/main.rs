@@ -9,17 +9,37 @@ mod components;
 mod game;
 
 use macroquad::prelude::*;
+use macroquad::window;
+
 use menu::MenuScreen;
 use state::GameState;
 use game::Game;
+use components::joystick::Joystick;
+use components::layout::is_mobile;
 
+fn window_conf() -> window::Conf {
+    window::Conf {
+        window_title: "Macroquad WASM Game".to_owned(),
+        high_dpi: true,
+        ..Default::default()
+    }
+}
 
-#[macroquad::main("Macroquad WASM Game")]
+#[macroquad::main(window_conf)]
 async fn main() {
     let mut game_state = GameState::Menu;
     let mut menu = MenuScreen::new();
-    let mut game = Game::new().await;
 
+    let joystick_size = 200.0;
+    let joystick_pos_x = (screen_width() / 2.0) - (joystick_size / 5.0);
+    let joystick_pos_y = screen_height() - joystick_size - 20.0;
+    let joystick = if is_mobile() {
+        Some(Joystick::new(vec2(joystick_pos_x, joystick_pos_y), joystick_size))
+    } else {
+        None
+    };
+
+    let mut game = Game::new(joystick).await;
     game.init().await;
 
     loop {
