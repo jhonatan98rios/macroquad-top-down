@@ -5,7 +5,7 @@ use crate::enemies::{EnemySystem, PositionOverlap};
 use crate::strategies::{BoidsMovement};
 use crate::constants::{WORLD_WIDTH, WORLD_HEIGHT, virtual_height, virtual_width};
 use crate::components::joystick::Joystick;
-use crate::components::layout::is_mobile;
+use crate::components::layout::{is_mobile};
 
 pub struct Game {
     player: Player,
@@ -73,7 +73,7 @@ impl Game {
         }
 
         draw_text(
-            &format!("WASD or Arrows to move | FPS: {} | enemies {}", get_fps(), self.enemies.positions.len()),
+            &format!("WASD or Arrows to move | FPS: {} | enemies {} | width {}", get_fps(), self.enemies.positions.len(), screen_width()),
             20.0,
             30.0,
             30.0,
@@ -95,7 +95,10 @@ fn clamp_camera_target(player_position: Vec2) -> Vec2 {
 
 #[inline]
 fn calculate_camera_zoom() -> Vec2 {
-    vec2(
+    if is_mobile() { 
+        return vec2(2.0 / virtual_width(), -2.0 / virtual_height())
+    }
+    return vec2(
         2.0 / virtual_width() * (virtual_width() / screen_width()),
         -2.0 / virtual_height() * (virtual_height() / screen_height())
     )

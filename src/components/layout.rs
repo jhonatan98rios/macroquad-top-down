@@ -39,12 +39,8 @@ impl<'a> Column<'a> {
 }
 
 pub fn is_mobile() -> bool {
-    // return true;
     let width = screen_width();
     let height = screen_height();
     let aspect_ratio = height / width;
-
-    (width < 768.0 && aspect_ratio > 1.3)
-        || cfg!(target_os = "android") 
-        || cfg!(target_os = "ios")
+    return aspect_ratio > 1.3;
 }
