@@ -73,7 +73,7 @@ impl Game {
         }
 
         draw_text(
-            &format!("WASD or Arrows to move | FPS: {} | enemies {} | width {}", get_fps(), self.enemies.positions.len(), screen_width()),
+            &format!("WASD or Arrows to move | FPS: {} | enemies {}", get_fps(), self.enemies.positions.len()),
             20.0,
             30.0,
             30.0,
