@@ -4,6 +4,7 @@ mod enemies;
 mod strategies;
 mod constants;
 mod menu;
+mod pause;
 mod state;
 mod components;
 mod game;
@@ -12,6 +13,8 @@ use macroquad::prelude::*;
 use macroquad::window;
 
 use menu::MenuScreen;
+use pause::PauseScreen;
+
 use state::GameState;
 use game::Game;
 use components::joystick::Joystick;
@@ -28,7 +31,8 @@ fn window_conf() -> window::Conf {
 #[macroquad::main(window_conf)]
 async fn main() {
     let mut game_state = GameState::Menu;
-    let mut menu = MenuScreen::new();
+    let mut menu_screen = MenuScreen::new();
+    let mut pause_screen = PauseScreen::new();
 
     let joystick_size = 200.0;
     let joystick_pos_x = (screen_width() / 2.0) - (joystick_size / 5.0);
@@ -45,12 +49,24 @@ async fn main() {
     loop {
         match game_state {
             GameState::Menu => {
-                if let Some(next_state) = menu.draw() {
+                if let Some(next_state) = menu_screen.draw() {
                     game_state = next_state;
                 }
             },
             GameState::Playing => {
+                if is_key_pressed(KeyCode::Escape) || (is_mobile() && is_key_pressed(KeyCode::Back)) {
+                    game_state = GameState::Paused;
+                }
                 game.update();
+            },
+            GameState::Paused => {
+                if is_key_pressed(KeyCode::Escape) {
+                    game_state = GameState::Playing;
+                }
+    
+                if let Some(next_state) = pause_screen.draw() {
+                    game_state = next_state;
+                }
             }
         }   
 
