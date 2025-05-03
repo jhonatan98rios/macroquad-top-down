@@ -3,7 +3,7 @@ use std::rc::Rc;
 use std::cell::RefCell;
 
 use crate::state::GameState;
-use crate::components::button::Button;
+use crate::components::button::ButtonBuilder;
 use crate::components::text::TextComponent;
 use crate::components::layout::{Column, is_mobile};
 
@@ -30,20 +30,29 @@ impl<'a> MenuScreen<'a> {
 
         let screen_center = vec2(screen_width() / 2.0, screen_height() / 2.0);
         let title_size = if is_mobile() { 50.0 } else { 60.0 };
-        let title = TextComponent::new("Welcome to Metal Against Demons!", title_size)
+        // let title = TextComponent::new("Welcome to Metal Against Demons!", title_size)
+        //     .color(WHITE)
+        //     .align_center(true)
+        //     .at(screen_center.x, screen_center.y - 100.0);
+
+        let title = TextComponent::builder()
+            .text("Welcome to Metal Against Demons!")
+            .font_size(title_size)
             .color(WHITE)
             .align_center(true)
-            .at(screen_center.x, screen_center.y - 100.0);
+            .at(screen_center.x, screen_center.y - 100.0)
+            .build();
 
         let start_button_width = if is_mobile() { 500.0 } else { 200.0 };
+        let start_button_height = if is_mobile() { 100.0 } else { 60.0 }; 
 
-        let start_button = Button::builder(
-            screen_center.x - start_button_width / 2.0,
-            screen_center.y,
-            start_button_width,
-            if is_mobile() { 100.0 } else { 60.0 },
-            "Start Game",
-        )
+        let start_button = ButtonBuilder::new()
+            .position(
+                screen_center.x - start_button_width / 2.0, 
+                screen_center.y,
+            )
+            .size(start_button_width, start_button_height)
+            .label("Start Game")
             .on_click(move || {
                 *state_transition_clone.borrow_mut() = Some(GameState::Playing);
             })

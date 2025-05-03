@@ -4,27 +4,14 @@ use crate::components::layout::{ is_mobile };
 
 
 pub struct Button<'a> {
-    pub rect: Rect,
-    pub label: &'a str,
-    pub on_click: Box<dyn FnMut() + 'a>,
-    pub color: Color,
-    pub hover_color: Color,
+    rect: Rect,
+    label: &'a str,
+    on_click: Box<dyn FnMut() + 'a>,
+    color: Color,
+    hover_color: Color,
 }
 
 impl<'a> Button<'a> {
-    pub fn builder(x: f32, y: f32, width: f32, height: f32, label: &'a str) -> ButtonBuilder<'a> {
-        ButtonBuilder {
-            x,
-            y,
-            width,
-            height,
-            label,
-            on_click: Box::new(|| {}),
-            color: Color::from_rgba(100, 20, 20, 255),
-            hover_color: Color::from_rgba(200, 50, 50, 255),
-        }
-    }
-
     pub fn draw(&mut self) {
         let mouse = mouse_position();
         let is_hovering = self.rect.contains(vec2(mouse.0, mouse.1));
@@ -66,15 +53,40 @@ pub struct ButtonBuilder<'a> {
     y: f32,
     width: f32,
     height: f32,
-    label: &'a str,
+    label: Option<&'a str>,
     on_click: Box<dyn FnMut() + 'a>,
     color: Color,
     hover_color: Color,
 }
 
 impl<'a> ButtonBuilder<'a> {
-    pub fn on_click(mut self, handler: impl FnMut() + 'a) -> Self {
-        self.on_click = Box::new(handler);
+    pub fn new() -> Self {
+        Self {
+            x: 0.0,
+            y: 0.0,
+            width: 100.0,
+            height: 40.0,
+            label: None,
+            on_click: Box::new(|| {}),
+            color: Color::from_rgba(100, 20, 20, 255),
+            hover_color: Color::from_rgba(200, 50, 50, 255),
+        }
+    }
+
+    pub fn position(mut self, x: f32, y: f32) -> Self {
+        self.x = x;
+        self.y = y;
+        self
+    }
+
+    pub fn size(mut self, width: f32, height: f32) -> Self {
+        self.width = width;
+        self.height = height;
+        self
+    }
+
+    pub fn label(mut self, label: &'a str) -> Self {
+        self.label = Some(label);
         self
     }
 
@@ -88,10 +100,17 @@ impl<'a> ButtonBuilder<'a> {
         self
     }
 
+    pub fn on_click(mut self, handler: impl FnMut() + 'a) -> Self {
+        self.on_click = Box::new(handler);
+        self
+    }
+
     pub fn build(self) -> Button<'a> {
+        let label = self.label.expect("Button label must be set");
+
         Button {
             rect: Rect::new(self.x, self.y, self.width, self.height),
-            label: self.label,
+            label,
             on_click: self.on_click,
             color: self.color,
             hover_color: self.hover_color,
