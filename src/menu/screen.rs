@@ -30,10 +30,6 @@ impl<'a> MenuScreen<'a> {
 
         let screen_center = vec2(screen_width() / 2.0, screen_height() / 2.0);
         let title_size = if is_mobile() { 50.0 } else { 60.0 };
-        // let title = TextComponent::new("Welcome to Metal Against Demons!", title_size)
-        //     .color(WHITE)
-        //     .align_center(true)
-        //     .at(screen_center.x, screen_center.y - 100.0);
 
         let title = TextComponent::builder()
             .text("Welcome to Metal Against Demons!")

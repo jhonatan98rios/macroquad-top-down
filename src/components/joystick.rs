@@ -1,7 +1,7 @@
 use macroquad::prelude::*;
 use crate::components::layout::is_mobile;
 
-
+#[derive(Clone)]
 pub struct Joystick {
     pub base_pos: Vec2,
     pub radius: f32,

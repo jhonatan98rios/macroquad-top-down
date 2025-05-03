@@ -43,8 +43,10 @@ async fn main() {
         None
     };
 
-    let mut game = Game::new(joystick).await;
+    let mut game = Game::new(joystick.clone()).await;
     game.init().await;
+
+    let mut previous_state = game_state;
 
     loop {
         match game_state {
@@ -70,6 +72,13 @@ async fn main() {
             }
         }   
 
+        // 💡 Reset the game if returning from Paused to Menu
+        if previous_state == GameState::Paused && game_state == GameState::Menu {
+            game = Game::new(joystick.clone()).await;
+            game.init().await;
+        }
+
+        previous_state = game_state;
         next_frame().await;
     }
 }
