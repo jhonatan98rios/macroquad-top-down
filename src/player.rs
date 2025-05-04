@@ -46,6 +46,10 @@ impl Player {
         }
     }
 
+    pub fn position(&self) -> Vec2 {
+        Vec2::new(self.x, self.y)
+    }
+
     pub fn update(&mut self) {
         let mut move_dir = Vec2::ZERO;
 
@@ -63,6 +67,14 @@ impl Player {
         }
 
         self.move_by_direction(move_dir);
+    }
+
+    pub fn update_with_direction(&mut self, joystick_dir: Option<Vec2>) {
+        if let Some(dir) = joystick_dir {
+            self.move_by_direction(dir);
+        } else {
+            self.update(); // fallback para teclado
+        }
     }
 
     pub fn draw(&self) {
@@ -96,11 +108,7 @@ impl Player {
                 draw_rectangle(self.x, self.y, self.size, self.size, BLUE);
             }
         }
-    }
-
-    pub fn position(&self) -> Vec2 {
-        Vec2::new(self.x, self.y)
-    }
+    }    
 
     pub fn move_by_direction(&mut self, direction: Vec2) {
         let mut move_dir = direction;
@@ -125,14 +133,6 @@ impl Player {
         if self.frame_timer >= self.frame_duration {
             self.frame_timer = 0.0;
             self.current_frame = (self.current_frame + 1) % 4;
-        }
-    }
-
-    pub fn update_with_direction(&mut self, joystick_dir: Option<Vec2>) {
-        if let Some(dir) = joystick_dir {
-            self.move_by_direction(dir);
-        } else {
-            self.update(); // fallback para teclado
         }
     }
 }
