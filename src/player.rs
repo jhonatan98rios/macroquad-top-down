@@ -1,5 +1,6 @@
 use macroquad::prelude::*;
 use crate::constants::{WORLD_HEIGHT, WORLD_WIDTH};
+use crate::event_bus::{EventBus, EventPayload, EventType};
 
 #[derive(PartialEq, Clone, Copy)]
 enum PlayerState {
@@ -10,6 +11,7 @@ enum PlayerState {
 pub struct Player {
     pub x: f32,
     pub y: f32,
+    pub health: f32,
     speed: f32,
     size: f32,
     texture: Option<Texture2D>,
@@ -31,9 +33,10 @@ impl Player {
             }
         };
 
-        Player {
+        let player = Player {
             x,
             y,
+            health: 100.0,
             speed: 4.0,
             size: 64.0,
             texture,
@@ -43,7 +46,21 @@ impl Player {
             frame_duration: 0.30,
             state: PlayerState::Idle,
             facing_right: true,
-        }
+        };
+
+        return player;
+    }
+
+    pub fn subscribe(&self, bus: &mut EventBus) {
+
+        bus.subscribe::<Player, _>(
+            EventType::Damage,
+            |player: &mut Player, payload| {
+                if let EventPayload::Damage { amount } = payload {
+                    player.take_damage(*amount as f32);
+                }
+            }
+        );
     }
 
     pub fn position(&self) -> Vec2 {
@@ -128,11 +145,23 @@ impl Player {
             self.state = PlayerState::Idle;
         }
     
-        // Atualiza animação
+        // Update animation frame
         self.frame_timer += get_frame_time();
         if self.frame_timer >= self.frame_duration {
             self.frame_timer = 0.0;
             self.current_frame = (self.current_frame + 1) % 4;
         }
+    }
+
+    pub fn take_damage(&mut self, amount: f32) {
+        self.health -= amount;
+        if self.health < 0.0 {
+            self.health = 0.0;
+            self.die();
+        }
+    }
+
+    pub fn die(&mut self) {
+        println!("Player has died!");
     }
 }

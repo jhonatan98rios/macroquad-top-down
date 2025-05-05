@@ -1,6 +1,7 @@
 use macroquad::prelude::*;
 use crate::strategies::MovementStrategy;
 use crate::constants::{WORLD_WIDTH, WORLD_HEIGHT};
+use crate::event_bus::{EventBus};
 use std::cmp;
 
 #[derive(Clone, Copy, PartialEq)]
@@ -114,7 +115,7 @@ impl EnemySystem {
             }
         }
 
-        // Atualiza animação
+        // Update animation frame
         self.frame_timer += get_frame_time();
         if self.frame_timer >= self.frame_duration {
             self.frame_timer = 0.0;
@@ -183,5 +184,10 @@ impl EnemySystem {
                 }
             }
         }
+    }
+
+    pub fn subscribe(&mut self, bus: &mut EventBus) {
+        //bus.subscribe(EventType::Damage, self);
+        println!("EnemySystem subscribed to EventBus");
     }
 }

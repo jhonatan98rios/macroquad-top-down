@@ -6,11 +6,13 @@ use crate::strategies::{BoidsMovement};
 use crate::constants::{WORLD_WIDTH, WORLD_HEIGHT, virtual_height, virtual_width};
 use crate::components::joystick::Joystick;
 use crate::components::layout::{is_mobile};
+use crate::event_bus::{EventBus, EventPayload, EventType};
 
 pub struct Game {
     player: Player,
     enemies: EnemySystem,
     camera: Camera2D,
+    event_bus: EventBus,
     pub joystick: Option<Joystick>,
 }
 
@@ -35,16 +37,21 @@ impl Game {
             ..Default::default()
         };
 
+        let event_bus = EventBus::new();
+
         Game {
             player: Player::new(100.0, 100.0).await,
             enemies: EnemySystem::new(1000, movement_strategy).await,
             camera,
+            event_bus,
             joystick
         }
     }
 
     pub async fn init(&mut self) {
         self.enemies.spawn_all();
+        self.player.subscribe(&mut self.event_bus);
+        self.enemies.subscribe(&mut self.event_bus);
     }
 
     pub fn update(&mut self) {
@@ -66,7 +73,6 @@ impl Game {
 
         self.enemies.update(self.player.position());
 
-        //
         self.enemies.draw(self.player.position(), PositionOverlap::Behind);
         self.player.draw();
         self.enemies.draw(self.player.position(),PositionOverlap::InFront);
@@ -84,6 +90,24 @@ impl Game {
             30.0,
             WHITE,
         );
+
+        draw_text(
+            &format!("Player Health: {}", self.player.health),
+            20.0,
+            60.0,
+            30.0,
+            WHITE,
+        );
+
+        if is_key_pressed(KeyCode::Space) {
+            self.event_bus.emit(
+                &EventType::Damage, 
+                &mut self.player, 
+                &EventPayload::Damage { 
+                    amount: 25 
+                }
+            );
+        }
     }
 }
 

@@ -1,3 +1,5 @@
+#[macro_use]
+mod macros;
 
 mod player;
 mod enemies;
@@ -8,6 +10,7 @@ mod pause;
 mod state;
 mod components;
 mod game;
+mod event_bus;
 
 use macroquad::prelude::*;
 use macroquad::window;
@@ -59,6 +62,7 @@ async fn main() {
                 if is_key_pressed(KeyCode::Escape) || (is_mobile() && is_key_pressed(KeyCode::Back)) {
                     game_state = GameState::Paused;
                 }
+
                 game.update();
             },
             GameState::Paused => {
