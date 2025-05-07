@@ -1,11 +1,7 @@
 use macroquad::prelude::*;
-use crate::event_bus::{EventBus, EventType, EventPayload};
-use crate::enemies::{EnemySystem, EnemyStatus, EnemyData};
+use crate::enemies::{EnemyStatus, EnemyData};
 use crate::player::Player;
 use super::CollisionStrategy;
-use std::rc::Rc;
-use std::cell::RefCell;
-
 
 pub struct AABBCollision;
 
@@ -15,8 +11,7 @@ impl CollisionStrategy for AABBCollision {
         positions: &mut Vec<Vec2>,
         sizes: &Vec<Vec2>,
         data: &mut Vec<EnemyData>,
-        player: &mut Player,
-        event_bus: &Rc<RefCell<EventBus>>,
+        player: &mut Player
     ) {
         for i in 0..positions.len() {
             if data[i].status != EnemyStatus::Live {
@@ -25,7 +20,7 @@ impl CollisionStrategy for AABBCollision {
 
             let enemy_pos = positions[i];
             let enemy_size = sizes[i];
-            let damage = 1; // Replace with the damage[i]
+            let damage = 1.0; // Replace with the damage[i]
 
             let overlap = enemy_pos.x < player.x + player.size &&
                           enemy_pos.x + enemy_size.x > player.x &&
@@ -33,13 +28,7 @@ impl CollisionStrategy for AABBCollision {
                           enemy_pos.y + enemy_size.y > player.y;
 
             if overlap {
-                event_bus.borrow_mut().emit(
-                    &EventType::Damage,
-                    player, 
-                    &EventPayload::Damage {
-                        amount: damage
-                    }
-                );
+                player.take_damage(damage);
             }
         }
     }

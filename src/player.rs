@@ -1,6 +1,5 @@
 use macroquad::prelude::*;
 use crate::constants::{WORLD_HEIGHT, WORLD_WIDTH};
-use crate::event_bus::{EventBus, EventPayload, EventType};
 
 #[derive(PartialEq, Clone, Copy)]
 enum PlayerState {
@@ -49,18 +48,6 @@ impl Player {
         };
 
         return player;
-    }
-
-    pub fn subscribe(&self, bus: &mut EventBus) {
-
-        bus.subscribe::<Player, _>(
-            EventType::Damage,
-            |player: &mut Player, payload| {
-                if let EventPayload::Damage { amount } = payload {
-                    player.take_damage(*amount as f32);
-                }
-            }
-        );
     }
 
     pub fn position(&self) -> Vec2 {

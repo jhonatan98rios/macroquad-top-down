@@ -10,7 +10,6 @@ mod pause;
 mod state;
 mod components;
 mod game;
-mod event_bus;
 
 use macroquad::prelude::*;
 use macroquad::window;

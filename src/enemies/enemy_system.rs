@@ -1,13 +1,11 @@
 use macroquad::prelude::*;
 use crate::strategies::MovementStrategy;
 use crate::constants::{WORLD_WIDTH, WORLD_HEIGHT};
-use crate::event_bus::{EventBus};
 use crate::player::Player;
 use crate::strategies::CollisionStrategy;
 use std::cmp;
-use std::rc::Rc;
-use std::cell::RefCell;
 
+#[allow(dead_code)]
 #[derive(Clone, Copy, PartialEq)]
 pub enum EnemyStatus {
     Pending,
@@ -32,7 +30,6 @@ pub struct EnemySystem {
     pub data: Vec<EnemyData>,
     movement_strategy: Box<dyn MovementStrategy>,
     collision_strategy: Box<dyn CollisionStrategy>,
-    pub event_bus: Rc<RefCell<EventBus>>,
     time: f32,
     chunk_index: usize,
     max_number_of_chunks: usize,
@@ -47,7 +44,6 @@ impl EnemySystem {
         count: usize, 
         movement_strategy: Box<dyn MovementStrategy>,
         collision_strategy: Box<dyn CollisionStrategy>,
-        event_bus: Rc<RefCell<EventBus>>,
     ) -> Self {
         
         let texture = match load_texture("images/enemy_spritesheet.png").await {
@@ -77,7 +73,6 @@ impl EnemySystem {
             data,
             movement_strategy,
             collision_strategy,
-            event_bus,
             time: 0.0,
             chunk_index: 0,
             max_number_of_chunks: 4,
@@ -104,8 +99,7 @@ impl EnemySystem {
             &mut self.positions,
             &self.sizes,
             &mut self.data,
-            player,
-            &self.event_bus,
+            player
         );
     }
 
@@ -213,10 +207,5 @@ impl EnemySystem {
                 }
             }
         }
-    }
-
-    pub fn subscribe(&mut self, bus: &mut EventBus) {
-        //bus.subscribe(EventType::Damage, self);
-        println!("EnemySystem subscribed to EventBus");
     }
 }

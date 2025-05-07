@@ -1,13 +1,10 @@
 use macroquad::prelude::*;
-use std::rc::Rc;
-use std::cell::RefCell;
 
 use crate::player::Player;
 use crate::enemies::{EnemySystem, PositionOverlap};
 use crate::constants::{WORLD_WIDTH, WORLD_HEIGHT, virtual_height, virtual_width};
 use crate::components::joystick::Joystick;
 use crate::components::layout::{is_mobile};
-use crate::event_bus::{EventBus, EventPayload, EventType};
 use crate::strategies::{BoidsMovement, AABBCollision};
 
 
@@ -16,14 +13,11 @@ pub struct Game {
     player: Player,
     enemies: EnemySystem,
     camera: Camera2D,
-    pub event_bus: Rc<RefCell<EventBus>>,
     pub joystick: Option<Joystick>,
 }
 
 impl Game {
     pub async fn new(joystick: Option<Joystick>) -> Self {
-
-        let event_bus = Rc::new(RefCell::new(EventBus::new()));
 
         let camera = Camera2D {
             zoom: vec2(2.0 / virtual_width(), -2.0 / virtual_height()),
@@ -49,28 +43,25 @@ impl Game {
             100, 
             movement_strategy, 
             collision_strategy,
-            event_bus.clone(),
         ).await;
 
+        let player = Player::new(100.0, 100.0).await;
+
         Game {
-            player: Player::new(100.0, 100.0).await,
+            player,
             enemies,
             camera,
-            event_bus,
             joystick
         }
     }
 
     pub async fn init(&mut self) {
         self.enemies.spawn_all();
-
-        self.player.subscribe(&mut self.event_bus.borrow_mut());
-        self.enemies.subscribe(&mut self.event_bus.borrow_mut());
     }
 
     pub fn update(&mut self) {
         clear_background(BLACK);
-        
+
         self.camera.zoom = calculate_camera_zoom();
         self.camera.target = clamp_camera_target(self.player.position());
         set_camera(&self.camera);

@@ -5,10 +5,6 @@ pub use boids::BoidsMovement;
 pub use collisions::AABBCollision;
 
 use macroquad::prelude::*;
-use std::rc::Rc;
-use std::cell::RefCell;
-
-use crate::event_bus::EventBus;
 use crate::enemies::{EnemyData};
 use crate::player::Player;
 
@@ -31,7 +27,6 @@ pub trait CollisionStrategy {
         positions: &mut Vec<Vec2>,
         sizes: &Vec<Vec2>,
         data: &mut Vec<EnemyData>,
-        player: &mut Player,
-        event_bus: &Rc<RefCell<EventBus>>,
+        player: &mut Player
     );
 }
