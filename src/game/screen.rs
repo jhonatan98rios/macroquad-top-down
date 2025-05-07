@@ -1,23 +1,35 @@
 use macroquad::prelude::*;
+use std::rc::Rc;
+use std::cell::RefCell;
 
 use crate::player::Player;
 use crate::enemies::{EnemySystem, PositionOverlap};
-use crate::strategies::{BoidsMovement};
 use crate::constants::{WORLD_WIDTH, WORLD_HEIGHT, virtual_height, virtual_width};
 use crate::components::joystick::Joystick;
 use crate::components::layout::{is_mobile};
 use crate::event_bus::{EventBus, EventPayload, EventType};
+use crate::strategies::{BoidsMovement, AABBCollision};
+
+
 
 pub struct Game {
     player: Player,
     enemies: EnemySystem,
     camera: Camera2D,
-    event_bus: EventBus,
+    pub event_bus: Rc<RefCell<EventBus>>,
     pub joystick: Option<Joystick>,
 }
 
 impl Game {
     pub async fn new(joystick: Option<Joystick>) -> Self {
+
+        let event_bus = Rc::new(RefCell::new(EventBus::new()));
+
+        let camera = Camera2D {
+            zoom: vec2(2.0 / virtual_width(), -2.0 / virtual_height()),
+            target: vec2(virtual_width() / 2.0, virtual_height() / 2.0),
+            ..Default::default()
+        };
 
         let movement_strategy = Box::new(BoidsMovement {
             visual_range: 32.0,
@@ -31,17 +43,18 @@ impl Game {
             cohesion_weight: 0.3,
         });
 
-        let camera = Camera2D {
-            zoom: vec2(2.0 / virtual_width(), -2.0 / virtual_height()),
-            target: vec2(virtual_width() / 2.0, virtual_height() / 2.0),
-            ..Default::default()
-        };
+        let collision_strategy = Box::new(AABBCollision {});
 
-        let event_bus = EventBus::new();
+        let enemies = EnemySystem::new(
+            100, 
+            movement_strategy, 
+            collision_strategy,
+            event_bus.clone(),
+        ).await;
 
         Game {
             player: Player::new(100.0, 100.0).await,
-            enemies: EnemySystem::new(1000, movement_strategy).await,
+            enemies,
             camera,
             event_bus,
             joystick
@@ -50,8 +63,9 @@ impl Game {
 
     pub async fn init(&mut self) {
         self.enemies.spawn_all();
-        self.player.subscribe(&mut self.event_bus);
-        self.enemies.subscribe(&mut self.event_bus);
+
+        self.player.subscribe(&mut self.event_bus.borrow_mut());
+        self.enemies.subscribe(&mut self.event_bus.borrow_mut());
     }
 
     pub fn update(&mut self) {
@@ -71,7 +85,7 @@ impl Game {
         self.player.update_with_direction(joystick_dir);
         self.player.update();
 
-        self.enemies.update(self.player.position());
+        self.enemies.update(self.player.position(), &mut self.player);
 
         self.enemies.draw(self.player.position(), PositionOverlap::Behind);
         self.player.draw();
@@ -98,16 +112,6 @@ impl Game {
             30.0,
             WHITE,
         );
-
-        if is_key_pressed(KeyCode::Space) {
-            self.event_bus.emit(
-                &EventType::Damage, 
-                &mut self.player, 
-                &EventPayload::Damage { 
-                    amount: 25 
-                }
-            );
-        }
     }
 }
 
