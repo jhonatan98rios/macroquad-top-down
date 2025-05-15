@@ -7,8 +7,6 @@ use crate::components::joystick::Joystick;
 use crate::components::layout::{is_mobile};
 use crate::strategies::{BoidsMovement, AABBCollision};
 
-
-
 pub struct Game {
     player: Player,
     enemies: EnemySystem,
@@ -95,14 +93,10 @@ impl Game {
             30.0,
             WHITE,
         );
+    }
 
-        draw_text(
-            &format!("Player Health: {}", self.player.health),
-            20.0,
-            60.0,
-            30.0,
-            WHITE,
-        );
+    pub fn is_game_over(&self) -> bool {
+        self.player.health <= 0.0
     }
 }
 

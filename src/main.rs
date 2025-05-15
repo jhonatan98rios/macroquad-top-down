@@ -10,12 +10,14 @@ mod pause;
 mod state;
 mod components;
 mod game;
+mod game_over;
 
 use macroquad::prelude::*;
 use macroquad::window;
 
 use menu::MenuScreen;
 use pause::PauseScreen;
+use game_over::GameOverScreen;
 
 use state::GameState;
 use game::Game;
@@ -35,6 +37,7 @@ async fn main() {
     let mut game_state = GameState::Menu;
     let mut menu_screen = MenuScreen::new();
     let mut pause_screen = PauseScreen::new();
+    let mut game_over_screen = GameOverScreen::new(); 
 
     let joystick_size = 200.0;
     let joystick_pos_x = (screen_width() / 2.0) - (joystick_size / 5.0);
@@ -63,6 +66,10 @@ async fn main() {
                 }
 
                 game.update();
+
+                if game.is_game_over() {
+                    game_state = GameState::GameOver;
+                }
             },
             GameState::Paused => {
                 if is_key_pressed(KeyCode::Escape) {
@@ -72,11 +79,16 @@ async fn main() {
                 if let Some(next_state) = pause_screen.draw() {
                     game_state = next_state;
                 }
-            }
-        }   
+            },
+            GameState::GameOver => {
+                if let Some(next_state) = game_over_screen.draw() {
+                    game_state = next_state;
+                }
+            },
+        }
 
-        // 💡 Reset the game if returning from Paused to Menu
-        if previous_state == GameState::Paused && game_state == GameState::Menu {
+        // 💡 Reset the game if returning from Paused orr GameOver to Menu
+        if previous_state != GameState::Menu && game_state == GameState::Menu {
             game = Game::new(joystick.clone()).await;
             game.init().await;
         }

@@ -2,5 +2,6 @@
 pub enum GameState {
     Menu,
     Playing,
-    Paused
+    Paused,
+    GameOver
 }

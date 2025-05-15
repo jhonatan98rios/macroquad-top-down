@@ -10,6 +10,7 @@ enum PlayerState {
 pub struct Player {
     pub x: f32,
     pub y: f32,
+    pub max_health: f32,
     pub health: f32,
     pub speed: f32,
     pub size: f32,
@@ -35,8 +36,9 @@ impl Player {
         let player = Player {
             x,
             y,
+            max_health: 200.0,
             health: 200.0,
-            speed: 4.0,
+            speed: 3.0,
             size: 64.0,
             texture,
             last_movement: Vec2::ZERO,
@@ -71,13 +73,29 @@ impl Player {
         }
 
         self.move_by_direction(move_dir);
+        self.update_animation();
     }
 
     pub fn update_with_direction(&mut self, joystick_dir: Option<Vec2>) {
         if let Some(dir) = joystick_dir {
-            self.move_by_direction(dir);
+            if dir.length_squared() > 0.0 {
+                self.move_by_direction(dir);
+            } else {
+                self.state = PlayerState::Idle;
+            }
         } else {
-            self.update(); // fallback para teclado
+            self.update(); // fallback to keyboard controls
+            return; // to avoid double update
+        }
+    
+        self.update_animation(); // <- animation update moved here
+    }
+
+    fn update_animation(&mut self) {
+        self.frame_timer += get_frame_time();
+        if self.frame_timer >= self.frame_duration {
+            self.frame_timer = 0.0;
+            self.current_frame = (self.current_frame + 1) % 4;
         }
     }
 
@@ -112,7 +130,37 @@ impl Player {
                 draw_rectangle(self.x, self.y, self.size, self.size, BLUE);
             }
         }
-    }    
+
+        self.draw_health_bar();
+    }
+
+    pub fn draw_health_bar(&self) {
+
+        if self.health == self.max_health {
+            return;
+        }
+
+        let bar_width = self.size / 2.0;
+        let bar_height = 3.0;
+        let bar_x = self.x  + (self.size - bar_width) / 2.0;
+        //let bar_y = self.y + self.size + 5.0;
+        let bar_y = self.y - 10.0;
+
+        // Fundo (cinza)
+        draw_rectangle(bar_x, bar_y, bar_width, bar_height, GRAY);
+
+        // Vida atual (vermelha ou em gradiente)
+        let health_ratio = self.health / self.max_health;
+
+        let health_color = Color::from_rgba(
+            ((1.0 - health_ratio) * 255.0) as u8, // Red aumenta
+            (health_ratio * 255.0) as u8,         // Green diminui
+            0,
+            255,
+        );
+
+        draw_rectangle(bar_x, bar_y, bar_width * health_ratio, bar_height, health_color);
+    }
 
     pub fn move_by_direction(&mut self, direction: Vec2) {
         let mut move_dir = direction;
@@ -130,13 +178,6 @@ impl Player {
             self.y = self.y.clamp(0.0, WORLD_HEIGHT - self.size);
         } else {
             self.state = PlayerState::Idle;
-        }
-    
-        // Update animation frame
-        self.frame_timer += get_frame_time();
-        if self.frame_timer >= self.frame_duration {
-            self.frame_timer = 0.0;
-            self.current_frame = (self.current_frame + 1) % 4;
         }
     }
 
