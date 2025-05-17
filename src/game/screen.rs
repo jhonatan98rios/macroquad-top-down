@@ -2,10 +2,10 @@ use macroquad::prelude::*;
 
 use crate::player::Player;
 use crate::enemies::{EnemySystem, PositionOverlap};
-use crate::strategies::{BoidsMovement};
 use crate::constants::{WORLD_WIDTH, WORLD_HEIGHT, virtual_height, virtual_width};
 use crate::components::joystick::Joystick;
 use crate::components::layout::{is_mobile};
+use crate::strategies::{BoidsMovement, AABBCollision};
 
 pub struct Game {
     player: Player,
@@ -16,6 +16,12 @@ pub struct Game {
 
 impl Game {
     pub async fn new(joystick: Option<Joystick>) -> Self {
+
+        let camera = Camera2D {
+            zoom: vec2(2.0 / virtual_width(), -2.0 / virtual_height()),
+            target: vec2(virtual_width() / 2.0, virtual_height() / 2.0),
+            ..Default::default()
+        };
 
         let movement_strategy = Box::new(BoidsMovement {
             visual_range: 32.0,
@@ -29,15 +35,19 @@ impl Game {
             cohesion_weight: 0.3,
         });
 
-        let camera = Camera2D {
-            zoom: vec2(2.0 / virtual_width(), -2.0 / virtual_height()),
-            target: vec2(virtual_width() / 2.0, virtual_height() / 2.0),
-            ..Default::default()
-        };
+        let collision_strategy = Box::new(AABBCollision {});
+
+        let enemies = EnemySystem::new(
+            100, 
+            movement_strategy, 
+            collision_strategy,
+        ).await;
+
+        let player = Player::new(100.0, 100.0).await;
 
         Game {
-            player: Player::new(100.0, 100.0).await,
-            enemies: EnemySystem::new(1000, movement_strategy).await,
+            player,
+            enemies,
             camera,
             joystick
         }
@@ -49,7 +59,7 @@ impl Game {
 
     pub fn update(&mut self) {
         clear_background(BLACK);
-        
+
         self.camera.zoom = calculate_camera_zoom();
         self.camera.target = clamp_camera_target(self.player.position());
         set_camera(&self.camera);
@@ -64,9 +74,8 @@ impl Game {
         self.player.update_with_direction(joystick_dir);
         self.player.update();
 
-        self.enemies.update(self.player.position());
+        self.enemies.update(self.player.position(), &mut self.player);
 
-        //
         self.enemies.draw(self.player.position(), PositionOverlap::Behind);
         self.player.draw();
         self.enemies.draw(self.player.position(),PositionOverlap::InFront);
@@ -84,6 +93,10 @@ impl Game {
             30.0,
             WHITE,
         );
+    }
+
+    pub fn is_game_over(&self) -> bool {
+        self.player.health <= 0.0
     }
 }
 

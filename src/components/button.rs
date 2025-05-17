@@ -29,7 +29,7 @@ impl<'a> Button<'a> {
         draw_text(
             self.label,
             self.rect.x + (self.rect.w - text_dim.width) / 2.0,
-            self.rect.y + (self.rect.h + text_dim.height) / 2.0 - 5.0,
+            self.rect.y + (self.rect.h + text_dim.height) / 2.0,
             font_size,
             WHITE,
         );

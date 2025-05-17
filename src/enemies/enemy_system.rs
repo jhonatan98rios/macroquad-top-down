@@ -1,10 +1,12 @@
 use macroquad::prelude::*;
 use crate::strategies::MovementStrategy;
 use crate::constants::{WORLD_WIDTH, WORLD_HEIGHT};
+use crate::player::Player;
+use crate::strategies::CollisionStrategy;
 use std::cmp;
 
-#[derive(Clone, Copy, PartialEq)]
 #[allow(dead_code)]
+#[derive(Clone, Copy, PartialEq)]
 pub enum EnemyStatus {
     Pending,
     Live,
@@ -24,9 +26,10 @@ pub struct EnemyData {
 
 pub struct EnemySystem {
     pub positions: Vec<Vec2>,
-    sizes: Vec<Vec2>,
-    data: Vec<EnemyData>,
-    strategy: Box<dyn MovementStrategy>,
+    pub sizes: Vec<Vec2>,
+    pub data: Vec<EnemyData>,
+    movement_strategy: Box<dyn MovementStrategy>,
+    collision_strategy: Box<dyn CollisionStrategy>,
     time: f32,
     chunk_index: usize,
     max_number_of_chunks: usize,
@@ -37,7 +40,11 @@ pub struct EnemySystem {
 }
 
 impl EnemySystem {
-    pub async  fn new(count: usize, strategy: Box<dyn MovementStrategy>) -> Self {
+    pub async fn new(
+        count: usize, 
+        movement_strategy: Box<dyn MovementStrategy>,
+        collision_strategy: Box<dyn CollisionStrategy>,
+    ) -> Self {
         
         let texture = match load_texture("images/enemy_spritesheet.png").await {
             Ok(t) => Some(t),
@@ -64,7 +71,8 @@ impl EnemySystem {
             positions,
             sizes,
             data,
-            strategy,
+            movement_strategy,
+            collision_strategy,
             time: 0.0,
             chunk_index: 0,
             max_number_of_chunks: 4,
@@ -81,40 +89,56 @@ impl EnemySystem {
         }
     }
     
-    pub fn update(&mut self, target_pos: Vec2) {
+    pub fn update(&mut self, target_pos: Vec2, player: &mut Player) {
+
+        self.update_movement(target_pos);
+        self.update_animation_frame();
+
+        // Here the compiler allow us to use the mutable reference to self.data
+        self.collision_strategy.check_collisions(
+            &mut self.positions,
+            &self.sizes,
+            &mut self.data,
+            player
+        );
+    }
+
+    fn update_movement(&mut self, target_pos: Vec2) {
         self.time += get_frame_time();
-        self.chunk_index = if self.chunk_index < self.max_number_of_chunks - 1 { self.chunk_index + 1 } else { 0 };
-        
+        self.chunk_index = if self.chunk_index < self.max_number_of_chunks - 1 {
+            self.chunk_index + 1
+        } else {
+            0
+        };
+    
         let chunk_size = self.positions.len() / self.max_number_of_chunks;
         let start = self.chunk_index * chunk_size;
         let end = cmp::min(start + chunk_size, self.positions.len());
-        
+    
         let current_time = self.time;
-        let strategy = &self.strategy;
         let all_positions = self.positions.clone();
-        
+    
         for i in start..end {
             if self.data[i].status == EnemyStatus::Live {
-
                 let prev_pos = self.positions[i];
-
-                strategy.move_enemy(
+    
+                self.movement_strategy.move_enemy(
                     &mut self.positions[i],
                     target_pos,
                     current_time,
                     i,
                     &all_positions,
                 );
-
-                // Update movement direction if position changed
+    
                 let movement = self.positions[i] - prev_pos;
                 if movement.length_squared() > 0.0 {
                     self.data[i].last_movement = movement.normalize();
                 }
             }
         }
+    }
 
-        // Atualiza animação
+    fn update_animation_frame(&mut self) {
         self.frame_timer += get_frame_time();
         if self.frame_timer >= self.frame_duration {
             self.frame_timer = 0.0;
