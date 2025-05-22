@@ -27,6 +27,12 @@ pub struct EnemyData {
     pub health: f32,
 }
 
+#[derive(Clone)]
+pub struct ExperienceOrb {
+    pub position: Vec2,
+    pub value: f32,
+}
+
 pub struct EnemySystem {
     pub positions: Vec<Vec2>,
     pub sizes: Vec<Vec2>,
@@ -40,6 +46,7 @@ pub struct EnemySystem {
     current_frame: usize,
     frame_timer: f32,
     frame_duration: f32,
+    experience_orbs: Vec<ExperienceOrb>,
 }
 
 impl EnemySystem {
@@ -86,6 +93,7 @@ impl EnemySystem {
             current_frame: 0,
             frame_timer: 0.0,
             frame_duration: 0.15,
+            experience_orbs: Vec::new(),
         }
     }
     
@@ -107,6 +115,8 @@ impl EnemySystem {
             &mut self.data,
             player
         );
+
+        self.check_experience_orbs_collisions(player);
     }
 
     fn update_movement(&mut self, target_pos: Vec2) {
@@ -225,12 +235,12 @@ impl EnemySystem {
         }
 
         self.draw_health_bars();
+        self.draw_experience_orbs();
     }
 
     pub fn draw_health_bars(&self) {
         for i in 0..self.positions.len() {
             if self.data[i].status == EnemyStatus::Live {
-
                 
                 let bar_width = self.sizes[i].x / 2.0;
                 let bar_height = 3.0;
@@ -247,8 +257,8 @@ impl EnemySystem {
                 
                 let health_ratio = self.data[i].health / self.data[i].max_health;
                 let health_color = Color::from_rgba(
-                    ((1.0 - health_ratio) * 255.0) as u8, // Red aumenta
-                    (health_ratio * 255.0) as u8,         // Green diminui
+                    ((1.0 - health_ratio) * 255.0) as u8,
+                    (health_ratio * 255.0) as u8,
                     0,
                     255,
                 );
@@ -262,6 +272,35 @@ impl EnemySystem {
                 );
             }
         }
+    }
+
+    fn draw_experience_orbs(&self) {
+        for orb in &self.experience_orbs {
+            draw_rectangle(
+                orb.position.x,
+                orb.position.y,
+                5.0,
+                5.0,
+                BLUE
+            );
+        }
+    }
+
+    pub fn check_experience_orbs_collisions(&mut self, player: &mut Player) {
+
+        let mut orbs_to_remove = Vec::new();
+
+        for orb in &self.experience_orbs {
+            if player.position().x < orb.position.x + 5.0 &&
+                player.position().x + player.size > orb.position.x &&
+                player.position().y < orb.position.y + 5.0 &&
+                player.position().y + player.size > orb.position.y {
+                    player.add_experience(orb.value);
+                    orbs_to_remove.push(orb.position);
+            }
+        }
+
+        self.experience_orbs.retain(|orb| !orbs_to_remove.contains(&orb.position));
     }
 
     pub fn to_views(&self) -> Vec<EnemyView> {
@@ -279,10 +318,18 @@ impl EnemySystem {
 
     pub fn take_damage(&mut self, index: usize, damage: f32) {
         if let Some(enemy) = self.data.get_mut(index) {
-            if enemy.health > 0.0 {
-                enemy.health -= damage;
-            } else {
+            enemy.health -= damage;
+            if enemy.health <= 0.0 {
                 enemy.status = EnemyStatus::Dead;
+                self.experience_orbs.push(
+                    ExperienceOrb {
+                        position: vec2(
+                            self.positions[index].x + self.sizes[index].x / 2.0,
+                            self.positions[index].y + self.sizes[index].y / 2.0,
+                        ),
+                        value: self.data[index].max_health / 5.0,
+                    }
+                );
             }
         }
     }

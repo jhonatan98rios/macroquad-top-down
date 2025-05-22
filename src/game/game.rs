@@ -43,12 +43,15 @@ impl Game {
         let collision_strategy = Box::new(AABBCollision {});
 
         let enemies = EnemySystem::new(
-            100, 
+            50, 
             movement_strategy, 
             collision_strategy,
         ).await;
 
-        let player = Player::new(100.0, 100.0).await;
+        let player = Player::new(
+            WORLD_WIDTH / 2.0,
+            WORLD_HEIGHT / 2.0,
+        ).await;
 
         let mut skills_system = SkillsSystem::new();
 
@@ -111,8 +114,16 @@ impl Game {
 
         draw_text(
             &format!("WASD or Arrows to move | FPS: {} | enemies {}", get_fps(), self.enemies.positions.len()),
-            20.0,
+            if is_mobile() { 40.0 } else { 20.0 },
             30.0,
+            30.0, 
+            WHITE,
+        );
+
+        draw_text(
+            &format!("Level {} | Experience {}/{} ", self.player.level, self.player.current_experience, self.player.experience_to_next_level),
+            if is_mobile() { 40.0 } else { 20.0 },
+            60.0,
             30.0, 
             WHITE,
         );

@@ -14,6 +14,9 @@ pub struct Player {
     pub health: f32,
     pub speed: f32,
     pub size: f32,
+    pub level: f32,
+    pub current_experience: f32,
+    pub experience_to_next_level: f32,
     texture: Option<Texture2D>,
     last_movement: Vec2,
     current_frame: usize,
@@ -47,6 +50,9 @@ impl Player {
             frame_duration: 0.50,
             state: PlayerState::Idle,
             facing_right: true,
+            level: 1.0,
+            current_experience: 0.0,
+            experience_to_next_level: 10.0,
         };
 
         return player;
@@ -191,5 +197,21 @@ impl Player {
 
     pub fn die(&mut self) {
         println!("Player has died!");
+    }
+
+    pub fn add_experience(&mut self, amount: f32) {
+        // Implement experience logic here
+        self.current_experience += amount;
+        if self.current_experience >= self.experience_to_next_level {
+            self.level_up();
+        }
+    }
+
+    pub fn level_up(&mut self) {
+        self.level += 1.0;
+        self.current_experience -= self.experience_to_next_level;
+        self.experience_to_next_level = (self.experience_to_next_level * 1.5).round(); // Example of increasing experience needed for next level
+        self.max_health += 10.0; // Example of increasing max health on level up
+        self.health = self.max_health; // Restore health on level up
     }
 }
