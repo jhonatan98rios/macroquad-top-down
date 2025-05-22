@@ -3,6 +3,7 @@ use crate::strategies::MovementStrategy;
 use crate::constants::{WORLD_WIDTH, WORLD_HEIGHT};
 use crate::player::Player;
 use crate::strategies::CollisionStrategy;
+use crate::enemies::EnemyView;
 use std::cmp;
 
 #[allow(dead_code)]
@@ -21,7 +22,9 @@ pub enum PositionOverlap {
 #[derive(Clone, Copy)]
 pub struct EnemyData {
     pub status: EnemyStatus,
-    pub last_movement: Vec2, // Track movement direction for flipping
+    pub last_movement: Vec2,
+    pub max_health: f32,
+    pub health: f32,
 }
 
 pub struct EnemySystem {
@@ -62,9 +65,12 @@ impl EnemySystem {
             .collect();
             
         let sizes = vec![vec2(64.0, 64.0); count];
+
         let data = vec![EnemyData { 
             status: EnemyStatus::Pending,
-            last_movement: Vec2::new(1.0, 0.0) 
+            last_movement: Vec2::new(1.0, 0.0),
+            max_health: 5.0,
+            health: 5.0,
         }; count];
 
         EnemySystem {
@@ -116,7 +122,17 @@ impl EnemySystem {
         let end = cmp::min(start + chunk_size, self.positions.len());
     
         let current_time = self.time;
-        let all_positions = self.positions.clone();
+        let all_positions: Vec<Vec2> = self.data
+            .iter()
+            .zip(&self.positions)
+            .map(|(data, pos)| {
+                if data.status == EnemyStatus::Live {
+                    *pos
+                } else {
+                    Vec2::ZERO
+                }
+            })
+            .collect();
     
         for i in start..end {
             if self.data[i].status == EnemyStatus::Live {
@@ -205,6 +221,68 @@ impl EnemySystem {
                         );
                     }
                 }
+            }
+        }
+
+        self.draw_health_bars();
+    }
+
+    pub fn draw_health_bars(&self) {
+        for i in 0..self.positions.len() {
+            if self.data[i].status == EnemyStatus::Live {
+
+                
+                let bar_width = self.sizes[i].x / 2.0;
+                let bar_height = 3.0;
+                let bar_x = self.positions[i].x + (self.sizes[i].x - bar_width) / 2.0;
+                let bar_y = self.positions[i].y + self.sizes[i].y + 5.0;
+                
+                draw_rectangle(
+                    bar_x,
+                    bar_y,
+                    bar_width,
+                    bar_height,
+                    GRAY
+                );
+                
+                let health_ratio = self.data[i].health / self.data[i].max_health;
+                let health_color = Color::from_rgba(
+                    ((1.0 - health_ratio) * 255.0) as u8, // Red aumenta
+                    (health_ratio * 255.0) as u8,         // Green diminui
+                    0,
+                    255,
+                );
+                
+                draw_rectangle(
+                    bar_x,
+                    bar_y,
+                    bar_width * health_ratio,
+                    bar_height,
+                    health_color
+                );
+            }
+        }
+    }
+
+    pub fn to_views(&self) -> Vec<EnemyView> {
+        self.positions
+            .iter()
+            .zip(&self.sizes)
+            .zip(&self.data)
+            .map(|((&pos, &size), data)| EnemyView {
+                position: pos,
+                size,
+                alive: data.status == EnemyStatus::Live,
+            })
+            .collect()
+    }
+
+    pub fn take_damage(&mut self, index: usize, damage: f32) {
+        if let Some(enemy) = self.data.get_mut(index) {
+            if enemy.health > 0.0 {
+                enemy.health -= damage;
+            } else {
+                enemy.status = EnemyStatus::Dead;
             }
         }
     }

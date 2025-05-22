@@ -1,4 +1,5 @@
 use macroquad::prelude::*;
+use std::collections::HashMap;
 
 use crate::player::Player;
 use crate::enemies::{EnemySystem, PositionOverlap};
@@ -7,10 +8,14 @@ use crate::components::joystick::Joystick;
 use crate::components::layout::{is_mobile};
 use crate::strategies::{BoidsMovement, AABBCollision};
 
+use crate::skills::skills_system::SkillsSystem;
+use crate::skills::skills_factory::SkillsFactory;
+
 pub struct Game {
     player: Player,
     enemies: EnemySystem,
     camera: Camera2D,
+    skills_system: SkillsSystem,
     pub joystick: Option<Joystick>,
 }
 
@@ -45,10 +50,17 @@ impl Game {
 
         let player = Player::new(100.0, 100.0).await;
 
+        let mut skills_system = SkillsSystem::new();
+
+        skills_system.add_skill(Box::new(
+            SkillsFactory::create_simple_projectile_manager()
+        ));
+
         Game {
             player,
             enemies,
             camera,
+            skills_system,
             joystick
         }
     }
@@ -59,6 +71,8 @@ impl Game {
 
     pub fn update(&mut self) {
         clear_background(BLACK);
+
+        let delta = get_frame_time();
 
         self.camera.zoom = calculate_camera_zoom();
         self.camera.target = clamp_camera_target(self.player.position());
@@ -80,6 +94,15 @@ impl Game {
         self.player.draw();
         self.enemies.draw(self.player.position(),PositionOverlap::InFront);
 
+        let enemy_views = self.enemies.to_views();
+
+        self.skills_system.spawn(&self.player, &enemy_views);
+        self.skills_system.update(delta, &enemy_views, &mut |_, damage, enemy_index| {
+            self.enemies.take_damage(enemy_index, damage);
+        });
+
+        self.skills_system.draw();
+
         set_default_camera();
 
         if let Some(joystick) = &self.joystick {
@@ -90,7 +113,7 @@ impl Game {
             &format!("WASD or Arrows to move | FPS: {} | enemies {}", get_fps(), self.enemies.positions.len()),
             20.0,
             30.0,
-            30.0,
+            30.0, 
             WHITE,
         );
     }

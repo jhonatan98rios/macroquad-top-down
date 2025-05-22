@@ -11,6 +11,7 @@ mod state;
 mod components;
 mod game;
 mod game_over;
+mod skills;
 
 use macroquad::prelude::*;
 use macroquad::window;

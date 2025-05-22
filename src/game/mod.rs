@@ -1,3 +1,3 @@
-mod screen;
+mod game;
 
-pub use screen::Game;
+pub use game::Game;
