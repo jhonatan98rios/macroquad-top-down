@@ -202,9 +202,6 @@ impl Player {
     pub fn add_experience(&mut self, amount: f32) {
         // Implement experience logic here
         self.current_experience += amount;
-        if self.current_experience >= self.experience_to_next_level {
-            self.level_up();
-        }
     }
 
     pub fn level_up(&mut self) {

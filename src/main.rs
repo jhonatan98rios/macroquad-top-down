@@ -11,7 +11,10 @@ mod state;
 mod components;
 mod game;
 mod game_over;
+mod level_up;
+
 mod skills;
+mod experience;
 
 use macroquad::prelude::*;
 use macroquad::window;
@@ -19,6 +22,7 @@ use macroquad::window;
 use menu::MenuScreen;
 use pause::PauseScreen;
 use game_over::GameOverScreen;
+use level_up::LevelUpScreen;
 
 use state::GameState;
 use game::Game;
@@ -38,7 +42,8 @@ async fn main() {
     let mut game_state = GameState::Menu;
     let mut menu_screen = MenuScreen::new();
     let mut pause_screen = PauseScreen::new();
-    let mut game_over_screen = GameOverScreen::new(); 
+    let mut game_over_screen = GameOverScreen::new();
+    let mut level_up_screen = LevelUpScreen::new();
 
     let joystick_size = 200.0;
     let joystick_pos_x = (screen_width() / 2.0) - (joystick_size / 5.0);
@@ -52,31 +57,23 @@ async fn main() {
     let mut game = Game::new(joystick.clone()).await;
     game.init().await;
 
-    let mut previous_state = game_state;
-
     loop {
         match game_state {
             GameState::Menu => {
                 if let Some(next_state) = menu_screen.draw() {
                     game_state = next_state;
+                    game = Game::new(joystick.clone()).await;
+                    game.init().await;
                 }
             },
             GameState::Playing => {
-                if is_key_pressed(KeyCode::Escape) || (is_mobile() && is_key_pressed(KeyCode::Back)) {
-                    game_state = GameState::Paused;
-                }
-
-                game.update();
-
-                if game.is_game_over() {
-                    game_state = GameState::GameOver;
-                }
+                if let Some(new_state) = game.update() {
+                    game_state = new_state;
+                };
+                game.draw_scene();
+                game.draw_hub();
             },
-            GameState::Paused => {
-                if is_key_pressed(KeyCode::Escape) {
-                    game_state = GameState::Playing;
-                }
-    
+            GameState::Paused => {    
                 if let Some(next_state) = pause_screen.draw() {
                     game_state = next_state;
                 }
@@ -86,15 +83,13 @@ async fn main() {
                     game_state = next_state;
                 }
             },
+            GameState::LevelUp => {
+                if let Some(next_state) = level_up_screen.draw() {
+                    game_state = next_state;
+                }
+            },
         }
 
-        // 💡 Reset the game if returning from Paused orr GameOver to Menu
-        if previous_state != GameState::Menu && game_state == GameState::Menu {
-            game = Game::new(joystick.clone()).await;
-            game.init().await;
-        }
-
-        previous_state = game_state;
         next_frame().await;
     }
 }

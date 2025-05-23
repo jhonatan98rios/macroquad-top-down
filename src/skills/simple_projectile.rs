@@ -34,7 +34,7 @@ impl SkillUnit for SimpleProjectile {
         self.position += self.direction * self.speed * delta;
 
         // Collision detection
-        for (i, enemy) in enemy_views.iter().enumerate() {
+        for (enemy_index, enemy) in enemy_views.iter().enumerate() {
             if !enemy.alive {
                 continue;
             }
@@ -44,7 +44,7 @@ impl SkillUnit for SimpleProjectile {
             let distance = vec2(closest_x - self.position.x, closest_y - self.position.y).length();
 
             if distance < self.radius {
-                on_hit(i);
+                on_hit(enemy_index);
                 self.active = false;
                 break;
             }

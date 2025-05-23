@@ -1,5 +1,4 @@
 use macroquad::prelude::*;
-use std::collections::HashMap;
 
 use crate::player::Player;
 use crate::enemies::{EnemySystem, PositionOverlap};
@@ -7,16 +6,21 @@ use crate::constants::{WORLD_WIDTH, WORLD_HEIGHT, virtual_height, virtual_width}
 use crate::components::joystick::Joystick;
 use crate::components::layout::{is_mobile};
 use crate::strategies::{BoidsMovement, AABBCollision};
+use crate::state::GameState;
 
 use crate::skills::skills_system::SkillsSystem;
 use crate::skills::skills_factory::SkillsFactory;
+
+use crate::experience::experience_system::ExperienceSystem;
 
 pub struct Game {
     player: Player,
     enemies: EnemySystem,
     camera: Camera2D,
     skills_system: SkillsSystem,
+    experience_system: ExperienceSystem,
     pub joystick: Option<Joystick>,
+    joystick_dir: Option<Vec2>,
 }
 
 impl Game {
@@ -59,12 +63,16 @@ impl Game {
             SkillsFactory::create_simple_projectile_manager()
         ));
 
+        let experience_system = ExperienceSystem::new();
+
         Game {
             player,
             enemies,
             camera,
             skills_system,
-            joystick
+            experience_system,
+            joystick,
+            joystick_dir: None,
         }
     }
 
@@ -72,40 +80,59 @@ impl Game {
         self.enemies.spawn_all();
     }
 
-    pub fn update(&mut self) {
-        clear_background(BLACK);
+    pub fn update(&mut self) -> Option<GameState> {
 
-        let delta = get_frame_time();
-
-        self.camera.zoom = calculate_camera_zoom();
-        self.camera.target = clamp_camera_target(self.player.position());
-        set_camera(&self.camera);
-
-        draw_rectangle(0.0, 0.0, WORLD_WIDTH, WORLD_HEIGHT, Color::from_rgba(30, 30, 30, 255));
-
-        let joystick_dir = self.joystick.as_mut().map(|joy| {
+        self.joystick_dir = self.joystick.as_mut().map(|joy| {
             joy.update();
             joy.direction()
         });
 
-        self.player.update_with_direction(joystick_dir);
+        self.player.update_with_direction(self.joystick_dir); //TODO: Refactore these two methods
         self.player.update();
 
         self.enemies.update(self.player.position(), &mut self.player);
-
-        self.enemies.draw(self.player.position(), PositionOverlap::Behind);
-        self.player.draw();
-        self.enemies.draw(self.player.position(),PositionOverlap::InFront);
+        
 
         let enemy_views = self.enemies.to_views();
 
         self.skills_system.spawn(&self.player, &enemy_views);
-        self.skills_system.update(delta, &enemy_views, &mut |_, damage, enemy_index| {
-            self.enemies.take_damage(enemy_index, damage);
+        self.skills_system.update(get_frame_time(), &enemy_views, &mut |_, damage, enemy_index| {
+            self.enemies.take_damage(enemy_index, damage, &mut |positions, value| {
+                self.experience_system.spawn_experience_orb(positions, value);
+            });
         });
 
-        self.skills_system.draw();
+        if let Some(next_state) = self.experience_system.update(&mut self.player) {
+            return Some(next_state);
+        }
 
+        if self.is_game_over() {
+            return Some(GameState::GameOver);
+        }
+
+        if is_key_pressed(KeyCode::Escape) || (is_mobile() && is_key_pressed(KeyCode::Back)) {
+            return Some(GameState::Paused);
+        }
+
+        return None
+    }
+
+    pub fn draw_scene(&mut self) {
+        clear_background(BLACK);
+
+        self.camera.zoom = calculate_camera_zoom();
+        self.camera.target = clamp_camera_target(self.player.position());
+        set_camera(&self.camera);
+        draw_rectangle(0.0, 0.0, WORLD_WIDTH, WORLD_HEIGHT, Color::from_rgba(30, 30, 30, 255));
+
+        self.enemies.draw(self.player.position(), PositionOverlap::Behind);
+        self.player.draw();
+        self.enemies.draw(self.player.position(),PositionOverlap::InFront);
+        self.experience_system.draw();
+        self.skills_system.draw();
+    }
+
+    pub fn draw_hub(&mut self) {
         set_default_camera();
 
         if let Some(joystick) = &self.joystick {
@@ -133,6 +160,7 @@ impl Game {
         self.player.health <= 0.0
     }
 }
+
 
 #[inline]
 fn clamp_camera_target(player_position: Vec2) -> Vec2 {
