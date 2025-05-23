@@ -1,6 +1,7 @@
 use macroquad::prelude::*;
 use crate::components::layout::is_mobile;
 
+pub const ENEMIES: usize = 500;
 pub const WORLD_WIDTH: f32 = 4000.0;
 pub const WORLD_HEIGHT: f32 = 4000.0;
 

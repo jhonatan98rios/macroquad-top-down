@@ -28,11 +28,12 @@ impl SkillsSystem {
     pub fn update(
         &mut self,
         delta: f32,
+        player: &Player,
         enemy_views: &[EnemyView],
         mut on_hit: impl FnMut(SkillId, f32, usize),
     ) {
         for skill in self.skills.iter_mut() {
-            skill.update(delta, enemy_views, &mut on_hit);
+            skill.update(delta, player, enemy_views, &mut on_hit);
         }
     }
 

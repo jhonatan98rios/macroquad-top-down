@@ -278,6 +278,11 @@ impl EnemySystem {
 
     pub fn take_damage(&mut self, index: usize, damage: f32, on_die: &mut dyn FnMut(Vec2, f32)) {
         if let Some(enemy) = self.data.get_mut(index) {
+
+            if enemy.status != EnemyStatus::Live {
+                return;
+            }
+
             enemy.health -= damage;
             if enemy.health <= 0.0 {
                 enemy.status = EnemyStatus::Dead;

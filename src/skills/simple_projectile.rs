@@ -1,6 +1,6 @@
 use macroquad::prelude::*;
 use crate::player::Player;
-use super::traits::{SkillManager, SkillUnit};
+use super::traits::{SkillManager};
 use std::collections::HashMap;
 use crate::skills::skill_id::SkillId;
 use crate::enemies::EnemyView;
@@ -15,11 +15,7 @@ pub struct SimpleProjectile {
     pub active: bool,
 }
 
-impl SkillUnit for SimpleProjectile {
-    fn id(&self) -> SkillId {
-        self.id
-    }
-
+impl SimpleProjectile {
     fn update(
         &mut self,
         delta: f32,
@@ -118,6 +114,7 @@ impl SkillManager for SimpleProjectileManager {
     fn update(
         &mut self,
         delta: f32,
+        _: &Player,
         enemy_views: &[EnemyView],
         on_hit: &mut dyn FnMut(SkillId, f32, usize),
     ) {

@@ -2,7 +2,7 @@ use macroquad::prelude::*;
 
 use crate::player::Player;
 use crate::enemies::{EnemySystem, PositionOverlap};
-use crate::constants::{WORLD_WIDTH, WORLD_HEIGHT, virtual_height, virtual_width};
+use crate::constants::{ENEMIES, WORLD_WIDTH, WORLD_HEIGHT, virtual_height, virtual_width};
 use crate::components::joystick::Joystick;
 use crate::components::layout::{is_mobile};
 use crate::strategies::{BoidsMovement, AABBCollision};
@@ -47,7 +47,7 @@ impl Game {
         let collision_strategy = Box::new(AABBCollision {});
 
         let enemies = EnemySystem::new(
-            50, 
+            ENEMIES, 
             movement_strategy, 
             collision_strategy,
         ).await;
@@ -59,9 +59,13 @@ impl Game {
 
         let mut skills_system = SkillsSystem::new();
 
-        skills_system.add_skill(Box::new(
-            SkillsFactory::create_simple_projectile_manager()
-        ));
+        skills_system.add_skill(
+            Box::new(SkillsFactory::create_simple_projectile_manager())
+        );
+
+        skills_system.add_skill(
+            Box::new(SkillsFactory::create_force_field_manager())
+        );        
 
         let experience_system = ExperienceSystem::new();
 
@@ -96,7 +100,7 @@ impl Game {
         let enemy_views = self.enemies.to_views();
 
         self.skills_system.spawn(&self.player, &enemy_views);
-        self.skills_system.update(get_frame_time(), &enemy_views, &mut |_, damage, enemy_index| {
+        self.skills_system.update(get_frame_time(), &self.player, &enemy_views, &mut |_, damage, enemy_index| {
             self.enemies.take_damage(enemy_index, damage, &mut |positions, value| {
                 self.experience_system.spawn_experience_orb(positions, value);
             });

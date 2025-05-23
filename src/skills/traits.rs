@@ -9,20 +9,8 @@ pub trait SkillManager {
     fn update(
         &mut self,
         delta: f32,
+        player: &Player,
         enemy_views: &[EnemyView],
         on_hit: &mut dyn FnMut(SkillId, f32, usize),
-    );
-}
-
-#[allow(dead_code)]
-pub trait SkillUnit {
-    fn id(&self) -> SkillId;
-    fn draw(&self);
-    fn is_expired(&self) -> bool;
-    fn update(
-        &mut self,
-        delta: f32,
-        enemy_views: &[EnemyView],
-        on_hit: &mut dyn FnMut(usize),
     );
 }
